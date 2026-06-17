@@ -54,10 +54,14 @@ make doctor      # verify node + rust
 make dev         # run Tauri app
 ```
 
-This opens two windows:
+This starts the **companion overlay** on your desktop (always on top). Open **Settings** from the **AuraOS icon in your system tray** (top bar on Linux/macOS, notification area on Windows).
 
-1. **Settings** — pick your companion
-2. **Overlay** — transparent desktop character (Three.js placeholder, VRM-ready)
+Tray menu:
+
+- **Settings…** — companion picker, appearance, movement
+- **Show/Hide Companion** — toggle the overlay
+- **Feed Treat** — spawn a sticky note on your companion
+- **Quit AuraOS**
 
 Run `make` or `make help` for all commands.
 
@@ -84,7 +88,7 @@ Equivalent npm scripts: `npm run tauri:dev`, `npm run build`, `npm run tauri:bui
 
 ## What's Implemented (Phase 1)
 
-- Tauri 2 transparent overlay + settings window
+- Tauri 2 transparent overlay (always on top) + system tray settings
 - Five launch characters with full definition schema
 - Three.js placeholder renderer (ready for VRM models)
 - Animation state machine (sit, walk, run, celebrate, wave, …)

@@ -1,6 +1,7 @@
 mod character;
 mod db;
 mod system;
+mod tray;
 mod window;
 
 use character::{bundled_characters_dir, get_character, load_manifest, CharacterDefinition, CharacterManifest};
@@ -97,6 +98,21 @@ fn feed_treat(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn show_settings_window(app: tauri::AppHandle) -> Result<(), String> {
+    tray::show_settings_window(app)
+}
+
+#[tauri::command]
+fn toggle_companion_visibility(app: tauri::AppHandle) -> Result<(), String> {
+    tray::toggle_companion_visibility(app)
+}
+
+#[tauri::command]
+fn ensure_overlay_on_top_cmd(app: tauri::AppHandle) -> Result<(), String> {
+    tray::ensure_overlay_on_top(app)
+}
+
+#[tauri::command]
 async fn setup_overlay_window(app: tauri::AppHandle) -> Result<(), String> {
     use tauri::LogicalSize;
 
@@ -111,10 +127,7 @@ async fn setup_overlay_window(app: tauri::AppHandle) -> Result<(), String> {
                 .set_size(LogicalSize::new(size.width, size.height))
                 .map_err(|e| e.to_string())?;
         }
-        overlay.set_always_on_top(true).map_err(|e| e.to_string())?;
-        overlay
-            .set_ignore_cursor_events(true)
-            .map_err(|e| e.to_string())?;
+        tray::ensure_overlay_on_top(app.clone())?;
     }
     Ok(())
 }
@@ -153,13 +166,22 @@ pub fn run() {
             get_cursor_position,
             get_character_model_path,
             feed_treat,
+            show_settings_window,
+            toggle_companion_visibility,
+            ensure_overlay_on_top_cmd,
             setup_overlay_window,
             set_overlay_clickthrough,
         ])
         .setup(|app| {
             let handle = app.handle().clone();
+            tray::setup_tray(&handle).expect("failed to create system tray");
+            tray::hide_settings_on_start(&handle).expect("failed to hide settings window");
+            tray::attach_overlay_keep_on_top(&handle);
+            tray::spawn_overlay_keep_on_top_loop(&handle);
+
+            let setup_handle = handle.clone();
             tauri::async_runtime::spawn(async move {
-                let _ = setup_overlay_window(handle).await;
+                let _ = setup_overlay_window(setup_handle).await;
             });
             Ok(())
         })
