@@ -22,12 +22,13 @@ export class ObjectSpawner {
     characterId: string,
     position: { x: number; y: number },
     payload: Record<string, unknown> = {},
+    anchor: SpawnableObject["anchor"] = "character",
   ): SpawnableObject {
     const obj: SpawnableObject = {
       id: `spawn_${++objectId}`,
       type,
       position,
-      anchor: "desktop",
+      anchor,
       payload,
       character_id: characterId,
     };

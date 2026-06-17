@@ -1,6 +1,6 @@
 .PHONY: help install dev dev-ui build release check typecheck preview clean \
         deps-linux deps-linux-cursor deps-rust check-rust check-node doctor \
-        manifest cargo-check cargo-clean docs tauri
+        manifest models cargo-check cargo-clean docs tauri
 
 # AuraOS — Character Platform (Phase 1)
 # Run `make` or `make help` to see available commands.
@@ -97,6 +97,9 @@ cargo-check: ## Rust compile check (src-tauri)
 
 manifest: ## Regenerate characters/manifest.json from definitions
 	node scripts/build-manifest.mjs
+
+models: ## Download CC0 VRM models for launch characters
+	node scripts/download-models.mjs
 
 # ── Clean ────────────────────────────────────────────────────────────────────
 

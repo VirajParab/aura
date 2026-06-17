@@ -49,6 +49,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for macOS and Windows requirements.
 ```bash
 make deps-rust   # if cargo not found
 make install     # npm dependencies
+make models      # download CC0 VRM models for all characters
 make doctor      # verify node + rust
 make dev         # run Tauri app
 ```

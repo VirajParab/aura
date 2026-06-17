@@ -22,6 +22,7 @@ export class VrmRenderer implements CharacterRenderer {
 
   constructor(definition: CharacterDefinition) {
     this.definition = definition;
+    this.modelGroup.rotation.y = Math.PI;
     this.root.add(this.modelGroup);
     this.setCompanionScale(1);
   }
@@ -47,6 +48,12 @@ export class VrmRenderer implements CharacterRenderer {
       throw new Error("No VRM data in model file");
     }
     this.vrm = vrm;
+    vrm.scene.rotation.y = 0;
+
+    vrm.scene.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(vrm.scene);
+    vrm.scene.position.y = -box.min.y;
+
     this.modelGroup.add(vrm.scene);
     this.setCompanionScale(this.companionScale);
   }

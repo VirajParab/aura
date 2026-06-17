@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { CharacterActivity, CharacterDefinition } from "@/types/character";
 import { DEFAULT_COMPANION_SCALE } from "@/character/companionSettings";
-import { createCharacterRenderer } from "./createCharacterRenderer";
+import { createCharacterRenderer, VrmRenderer } from "./createCharacterRenderer";
 import type { CharacterRenderer } from "./types";
 
 export type { CharacterRenderer } from "./types";
@@ -66,6 +66,10 @@ export class SceneManager {
 
   getCharacterRenderer(): CharacterRenderer | null {
     return this.renderer3d;
+  }
+
+  hasVrmModel(): boolean {
+    return this.renderer3d instanceof VrmRenderer;
   }
 
   resize(width: number, height: number) {

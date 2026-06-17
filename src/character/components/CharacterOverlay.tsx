@@ -42,6 +42,7 @@ export function CharacterOverlay() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [characterLoading, setCharacterLoading] = useState(false);
   const [engineReady, setEngineReady] = useState(false);
+  const [show3dCanvas, setShow3dCanvas] = useState(false);
 
   const activeCharacter = useCharacterStore((s) => s.activeCharacter);
   const settings = useCharacterStore((s) => s.settings);
@@ -156,9 +157,13 @@ export function CharacterOverlay() {
       .then(() => {
         if (!cancelled) {
           sceneRef.current?.setCompanionScale(merged.companion_scale);
+          setShow3dCanvas(sceneRef.current?.hasVrmModel() ?? false);
         }
       })
-      .catch((err) => console.error("Failed to load character renderer:", err))
+      .catch((err) => {
+        console.error("Failed to load character renderer:", err);
+        if (!cancelled) setShow3dCanvas(false);
+      })
       .finally(() => {
         if (!cancelled) setCharacterLoading(false);
       });
@@ -257,12 +262,17 @@ export function CharacterOverlay() {
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >
-      <canvas ref={canvasRef} className="overlay-canvas" />
-      <CompanionSprite
-        character={activeCharacter}
-        settings={mergedSettings}
-        position={position}
+      <canvas
+        ref={canvasRef}
+        className={`overlay-canvas${show3dCanvas ? "" : " overlay-canvas--hidden"}`}
       />
+      {!show3dCanvas && (
+        <CompanionSprite
+          character={activeCharacter}
+          settings={mergedSettings}
+          position={position}
+        />
+      )}
       {characterLoading && (
         <div className="overlay-loading" aria-live="polite">
           Loading {activeCharacter.name}...
@@ -270,6 +280,7 @@ export function CharacterOverlay() {
       )}
       <SpawnedObjectsLayer
         objects={spawned}
+        characterPosition={position}
         onRemove={(id) => engineRef.current?.spawner.remove(id)}
       />
       {speechBubble && (

@@ -51,6 +51,11 @@ html.settings-mode #root {
   z-index: 5;
 }
 
+.overlay-canvas--hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
 .companion-sprite {
   position: absolute;
   z-index: 8;
@@ -166,7 +171,14 @@ html.settings-mode #root {
 
 .spawned-object--sticky_note {
   background: #fff9c4;
-  transform: rotate(-2deg);
+}
+
+.spawned-object--sticky_note.spawned-object--anchored {
+  transform: translate(-2%, -100%) rotate(-2deg);
+}
+
+.spawned-object--anchored {
+  transform: translate(-2%, -100%);
 }
 
 @keyframes spawn-in {

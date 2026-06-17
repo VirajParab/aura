@@ -91,6 +91,7 @@ export interface SpawnableObject {
   id: string;
   type: SpawnObjectType;
   position: { x: number; y: number };
+  /** Offset from anchor — when anchor is "character", relative to companion feet */
   anchor: "desktop" | "window" | "character";
   payload: Record<string, unknown>;
   character_id: string;

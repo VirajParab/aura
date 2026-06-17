@@ -179,8 +179,9 @@ export class CharacterEngine {
       this.spawner.spawn(
         "sticky_note",
         this.character.id,
-        { x: this.getPosition().x + 40, y: this.getPosition().y - 60 },
+        { x: -90, y: -140 },
         { text: "Treat time!", stub: true },
+        "character",
       );
     }
   }
@@ -210,10 +211,20 @@ export class CharacterEngine {
 
       if (this.character && this.character.spawn_objects[0]) {
         const type = this.character.spawn_objects[0];
-        this.spawner.spawn(type, this.character.id, screenPosition, {
-          stub: true,
-          label: SPAWN_LABELS[type],
-        });
+        const charPos = this.getPosition();
+        this.spawner.spawn(
+          type,
+          this.character.id,
+          {
+            x: screenPosition.x - charPos.x - 90,
+            y: screenPosition.y - charPos.y - 20,
+          },
+          {
+            stub: true,
+            label: SPAWN_LABELS[type],
+          },
+          "character",
+        );
       }
       this.callbacks.onSpeech?.(SPEECH_MAP[action] ?? "Special!");
     }

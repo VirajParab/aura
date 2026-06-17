@@ -52,7 +52,17 @@ make dev
 This opens two windows:
 
 1. **Settings** — pick your companion (Mochi, Pixel, Sakura, Nova, Ember)
-2. **Overlay** — transparent desktop companion with Three.js placeholder mesh
+2. **Overlay** — transparent desktop companion with VRM 3D avatar (or emoji fallback)
+
+## VRM models
+
+Free CC0 models are bundled for all launch characters. To re-download:
+
+```bash
+make models
+```
+
+See [characters/MODELS.md](characters/MODELS.md) for sources and how to swap models.
 
 ## Project structure
 
@@ -90,7 +100,7 @@ aura/
 | Transparent overlay window | Done |
 | Launch lineup (5 characters) | Done |
 | Character definition schema | Done |
-| Placeholder 3D renderer (VRM-ready) | Done |
+| Placeholder / VRM 3D renderer | Done |
 | Animation state machine | Done |
 | Physics (anchor, walk, follow cursor stub) | Done |
 | 3-level click interactions | Done |
@@ -99,13 +109,13 @@ aura/
 | SQLite settings persistence | Done |
 | Character picker settings UI | Done |
 | Window geometry API | Stub (Linux X11/Wayland next) |
-| VRM model loading | Ready — drop `.vrm` in `characters/{id}/` |
+| VRM model loading | Done — `make models` or drop `.vrm` in `characters/{id}/` |
 
-## Adding a VRM model
+## Adding or replacing a VRM model
 
-1. Place `model.vrm` in `characters/mochi/` (or any character folder)
-2. Implement loader in `src/character/renderer/VrmRenderer.ts` (extends `CharacterRenderer`)
-3. `SceneManager.setCharacter()` will prefer VRM when file exists
+1. Run `make models` to download CC0 defaults, or place your own `model.vrm` in `characters/{id}/`
+2. Restart the app (`make dev`)
+3. Browse more free models at [opensourceavatars.com](https://opensourceavatars.com)
 
 ## Tauri commands
 
