@@ -5,8 +5,14 @@
 ### All platforms
 
 - [Node.js](https://nodejs.org/) 20+
-- [Rust](https://rustup.rs/) stable
+- [Rust](https://rustup.rs/) stable — install with `make deps-rust`
 - npm
+
+Verify tools:
+
+```bash
+make doctor
+```
 
 ### Linux (Ubuntu/Debian)
 
@@ -37,8 +43,10 @@ xcode-select --install
 ## Quick start
 
 ```bash
-npm install
-npm run tauri:dev
+make deps-rust  # first time only, if cargo is missing
+make install
+make doctor
+make dev
 ```
 
 This opens two windows:
