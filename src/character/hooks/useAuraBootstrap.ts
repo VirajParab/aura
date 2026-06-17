@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 import { useCharacterStore } from "@/character/store/characterStore";
 import type {
@@ -52,6 +53,31 @@ export function useAuraBootstrap() {
     }
     load();
   }, [setManifest, setActiveCharacter, setSettings, setLoading]);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    listen<AppSettings>("settings-updated", (event) => {
+      const settings = event.payload;
+      setSettings(settings);
+
+      const manifest = useCharacterStore.getState().manifest;
+      if (!manifest) return;
+
+      const character = manifest.characters.find(
+        (c) => c.id === settings.active_character_id,
+      );
+      if (character) {
+        setActiveCharacter(character);
+      }
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      unlisten?.();
+    };
+  }, [setSettings, setActiveCharacter]);
 }
 
 export async function saveSettings(settings: AppSettings) {
@@ -65,4 +91,8 @@ export async function selectCharacter(character: CharacterDefinition) {
   await saveSettings(next);
   useCharacterStore.getState().setSettings(next);
   useCharacterStore.getState().setActiveCharacter(character);
+}
+
+export async function feedTreat() {
+  await invoke("feed_treat");
 }

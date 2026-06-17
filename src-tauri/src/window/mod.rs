@@ -2,4 +2,6 @@
 
 mod geometry;
 
-pub use geometry::{Anchor, AnchorSurface, CursorPosition, DesktopState, MonitorInfo, Rect, WindowInfo};
+pub use geometry::{
+    get_default_anchor, get_visible_windows, CursorPosition, DesktopState, MonitorInfo,
+};

@@ -1,3 +1,4 @@
+import { listen } from "@tauri-apps/api/event";
 import { useEffect, useRef, useState } from "react";
 import {
   CharacterEngine,
@@ -12,11 +13,18 @@ import { SpawnedObjectsLayer } from "./SpawnedObjectsLayer";
 import { WidgetPanel } from "./WidgetPanel";
 import type { SpawnableObject } from "@/types/character";
 
+const DEFAULT_POSITION = {
+  x: typeof window !== "undefined" ? window.innerWidth / 2 : 0,
+  y: typeof window !== "undefined" ? window.innerHeight - 80 : 0,
+};
+
 export function CharacterOverlay() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<CharacterEngine | null>(null);
   const sceneRef = useRef<SceneManager | null>(null);
   const [spawned, setSpawned] = useState<SpawnableObject[]>([]);
+  const [position, setPosition] = useState(DEFAULT_POSITION);
+  const [characterLoading, setCharacterLoading] = useState(false);
 
   const activeCharacter = useCharacterStore((s) => s.activeCharacter);
   const settings = useCharacterStore((s) => s.settings);
@@ -26,11 +34,6 @@ export function CharacterOverlay() {
   const setActivity = useCharacterStore((s) => s.setActivity);
   const setSpeechBubble = useCharacterStore((s) => s.setSpeechBubble);
   const openWidget = useCharacterStore((s) => s.openWidget);
-
-  const position = engineRef.current?.getPosition() ?? {
-    x: window.innerWidth / 2,
-    y: window.innerHeight - 80,
-  };
 
   useEffect(() => {
     let mounted = true;
@@ -44,6 +47,7 @@ export function CharacterOverlay() {
         onWidgetOpen: openWidget,
       });
       engineRef.current = engine;
+      setPosition(engine.getPosition());
 
       if (canvasRef.current) {
         const scene = new SceneManager(canvasRef.current);
@@ -51,6 +55,9 @@ export function CharacterOverlay() {
         scene.startLoop(
           () => engine.getPosition(),
           () => engine.getActivity(),
+          (pos) => {
+            if (mounted) setPosition(pos);
+          },
         );
       }
 
@@ -83,11 +90,25 @@ export function CharacterOverlay() {
 
   useEffect(() => {
     if (!activeCharacter || !settings || !engineRef.current) return;
+
+    let cancelled = false;
+    setCharacterLoading(true);
+
     engineRef.current.loadCharacter(
       activeCharacter,
       settings.follow_cursor && !settings.reduce_motion,
     );
-    sceneRef.current?.setCharacter(activeCharacter);
+
+    sceneRef.current
+      ?.setCharacter(activeCharacter)
+      .catch((err) => console.error("Failed to load character renderer:", err))
+      .finally(() => {
+        if (!cancelled) setCharacterLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeCharacter, settings]);
 
   useEffect(() => {
@@ -96,9 +117,7 @@ export function CharacterOverlay() {
     const trackCursor = async () => {
       try {
         const pos = await getCursorPosition();
-        if (pos.x !== 0 || pos.y !== 0) {
-          engineRef.current?.setCursorPosition(pos.x, pos.y);
-        }
+        engineRef.current?.setCursorPosition(pos.x, pos.y);
       } catch {
         // unavailable outside Tauri
       }
@@ -107,6 +126,28 @@ export function CharacterOverlay() {
     const id = setInterval(trackCursor, 100);
     return () => clearInterval(id);
   }, [settings?.companion_enabled]);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    listen<{ action: string }>("companion-action", (event) => {
+      if (event.payload.action === "feed_treat") {
+        engineRef.current?.feedTreat();
+      }
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      unlisten?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!speechBubble) return;
+    const id = setTimeout(() => setSpeechBubble(null), 3500);
+    return () => clearTimeout(id);
+  }, [speechBubble, setSpeechBubble]);
 
   const handlePointerMove = async (e: React.PointerEvent) => {
     const hit = sceneRef.current
@@ -144,6 +185,11 @@ export function CharacterOverlay() {
       onPointerUp={handlePointerUp}
     >
       <canvas ref={canvasRef} className="overlay-canvas" />
+      {characterLoading && (
+        <div className="overlay-loading" aria-live="polite">
+          Loading {activeCharacter.name}...
+        </div>
+      )}
       <SpawnedObjectsLayer
         objects={spawned}
         onRemove={(id) => engineRef.current?.spawner.remove(id)}

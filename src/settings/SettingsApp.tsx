@@ -1,4 +1,4 @@
-import { selectCharacter, saveSettings } from "@/character/hooks/useAuraBootstrap";
+import { feedTreat, selectCharacter, saveSettings } from "@/character/hooks/useAuraBootstrap";
 import { useCharacterStore } from "@/character/store/characterStore";
 import type { CharacterDefinition } from "@/types/character";
 
@@ -65,6 +65,24 @@ export function SettingsApp() {
               Spawns: {activeCharacter.spawn_objects.join(", ")}
             </li>
           </ul>
+          <div className="settings-actions">
+            <button
+              type="button"
+              className="settings-button"
+              onClick={() => feedTreat()}
+            >
+              Feed treat 🦴
+            </button>
+          </div>
+          <div className="settings-hints">
+            <h3>Interactions</h3>
+            <ul>
+              <li>Click — wave, bark, or character trick</li>
+              <li>Double-click — open widget</li>
+              <li>Long press — spawn object or special action</li>
+              <li>Feed treat — plays eat animation on overlay</li>
+            </ul>
+          </div>
         </section>
       )}
 

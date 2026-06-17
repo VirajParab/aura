@@ -39,10 +39,10 @@ pub fn db_path() -> PathBuf {
         .join("aura.db")
 }
 
-pub fn init_db() -> SqlResult<Connection> {
+pub fn init_db() -> Result<Connection, DbError> {
     let path = db_path();
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
+        std::fs::create_dir_all(parent).map_err(DbError::Io)?;
     }
     let conn = Connection::open(&path)?;
     conn.execute_batch(

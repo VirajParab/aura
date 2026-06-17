@@ -31,6 +31,7 @@
     "core:window:allow-inner-size",
     "core:window:allow-scale-factor",
     "core:window:allow-cursor-position",
+    "core:event:default",
     "opener:default"
   ]
 }

@@ -313,3 +313,57 @@ body,
 .settings-row input[type="range"] {
   width: 120px;
 }
+
+.settings-actions {
+  margin-top: 12px;
+}
+
+.settings-button {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(79, 195, 247, 0.4);
+  background: rgba(79, 195, 247, 0.15);
+  color: #eee;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.settings-button:hover {
+  background: rgba(79, 195, 247, 0.25);
+}
+
+.settings-hints {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.settings-hints h3 {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: #ccc;
+}
+
+.settings-hints ul {
+  list-style: disc;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #888;
+  line-height: 1.7;
+}
+
+.overlay-loading {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #eee;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 100;
+}

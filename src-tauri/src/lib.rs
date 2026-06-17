@@ -3,12 +3,13 @@ mod db;
 mod system;
 mod window;
 
-use character::{get_character, load_manifest, CharacterDefinition, CharacterManifest};
+use character::{bundled_characters_dir, get_character, load_manifest, CharacterDefinition, CharacterManifest};
 use db::{init_db, load_settings, save_settings, AppSettings};
+use serde_json::json;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use system::get_system_stats;
-use tauri::{Manager, State};
+use system::{get_system_stats, SystemStats};
+use tauri::{Emitter, Manager, State};
 use window::{get_default_anchor, get_visible_windows, CursorPosition, DesktopState, MonitorInfo};
 
 struct AppState {
@@ -33,9 +34,16 @@ fn get_app_settings(state: State<'_, AppState>) -> Result<AppSettings, String> {
 }
 
 #[tauri::command]
-fn set_app_settings(state: State<'_, AppState>, settings: AppSettings) -> Result<(), String> {
+fn set_app_settings(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    settings: AppSettings,
+) -> Result<(), String> {
     let conn = state.db.lock().map_err(|e| e.to_string())?;
-    save_settings(&conn, &settings).map_err(|e| e.to_string())
+    save_settings(&conn, &settings).map_err(|e| e.to_string())?;
+    app.emit("settings-updated", &settings)
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -55,15 +63,31 @@ fn get_desktop_state(monitors: Vec<MonitorInfo>) -> DesktopState {
 }
 
 #[tauri::command]
-fn get_system_stats_cmd() -> system::monitor::SystemStats {
+fn get_system_stats_cmd() -> SystemStats {
     get_system_stats()
 }
 
 #[tauri::command]
 fn get_cursor_position() -> (i32, i32) {
-    // Phase 1: requires libx11 for device_query on Linux.
-    // Frontend falls back to character anchor position until OS cursor API is wired.
-    (0, 0)
+    use device_query::{DeviceQuery, DeviceState};
+    let device_state = DeviceState::new();
+    let mouse = device_state.get_mouse();
+    mouse.coords
+}
+
+#[tauri::command]
+fn get_character_model_path(state: State<'_, AppState>, character_id: String) -> Option<String> {
+    let path = bundled_characters_dir(&state.resource_dir)
+        .join(&character_id)
+        .join("model.vrm");
+    path.exists()
+        .then(|| path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn feed_treat(app: tauri::AppHandle) -> Result<(), String> {
+    app.emit("companion-action", json!({ "action": "feed_treat" }))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -75,7 +99,7 @@ async fn setup_overlay_window(app: tauri::AppHandle) -> Result<(), String> {
             let size = monitor.size();
             let pos = monitor.position();
             overlay
-                .set_position(pos)
+                .set_position(*pos)
                 .map_err(|e| e.to_string())?;
             overlay
                 .set_size(LogicalSize::new(size.width, size.height))
@@ -121,6 +145,8 @@ pub fn run() {
             get_desktop_state,
             get_system_stats_cmd,
             get_cursor_position,
+            get_character_model_path,
+            feed_treat,
             setup_overlay_window,
             set_overlay_clickthrough,
         ])

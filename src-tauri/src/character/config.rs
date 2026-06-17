@@ -75,13 +75,6 @@ pub struct CharacterManifest {
     pub characters: Vec<CharacterDefinition>,
 }
 
-pub fn characters_dir() -> PathBuf {
-    dirs::data_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("aura")
-        .join("characters")
-}
-
 pub fn bundled_characters_dir(resource_dir: &PathBuf) -> PathBuf {
     resource_dir.join("characters")
 }

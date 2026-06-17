@@ -21,6 +21,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 dirs = "6"
 sysinfo = "0.33"
 thiserror = "2"
+device_query = "2"
 
 [profile.dev]
 incremental = true
