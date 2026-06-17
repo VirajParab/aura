@@ -15,8 +15,8 @@
         "label": "settings",
         "title": "AuraOS Settings",
         "url": "/?window=settings",
-        "width": 480,
-        "height": 640,
+        "width": 520,
+        "height": 720,
         "resizable": true,
         "center": true,
         "visible": true

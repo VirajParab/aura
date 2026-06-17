@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { CharacterOverlay } from "@/character/components/CharacterOverlay";
 import { useAuraBootstrap } from "@/character/hooks/useAuraBootstrap";
 import { SettingsApp } from "@/settings/SettingsApp";
@@ -12,6 +13,15 @@ function getWindowMode(): "overlay" | "settings" {
 export default function App() {
   useAuraBootstrap();
   const mode = getWindowMode();
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove("overlay-mode", "settings-mode");
+    root.classList.add(mode === "overlay" ? "overlay-mode" : "settings-mode");
+    return () => {
+      root.classList.remove("overlay-mode", "settings-mode");
+    };
+  }, [mode]);
 
   if (mode === "overlay") {
     return <CharacterOverlay />;

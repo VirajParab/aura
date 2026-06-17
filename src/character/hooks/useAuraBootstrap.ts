@@ -7,6 +7,7 @@ import type {
   CharacterDefinition,
   CharacterManifest,
 } from "@/types/character";
+import { DEFAULT_APP_SETTINGS, mergeSettings } from "@/character/companionSettings";
 
 export function useAuraBootstrap() {
   const setManifest = useCharacterStore((s) => s.setManifest);
@@ -22,7 +23,7 @@ export function useAuraBootstrap() {
           invoke<AppSettings>("get_app_settings"),
         ]);
         setManifest(manifest);
-        setSettings(settings);
+        setSettings(mergeSettings(settings));
 
         const character =
           manifest.characters.find(
@@ -39,13 +40,7 @@ export function useAuraBootstrap() {
         );
         const m = manifest as CharacterManifest;
         setManifest(m);
-        setSettings({
-          active_character_id: "mochi",
-          companion_enabled: true,
-          companion_opacity: 0.95,
-          reduce_motion: false,
-          follow_cursor: true,
-        });
+        setSettings(DEFAULT_APP_SETTINGS);
         setActiveCharacter(m.characters[0]);
       } finally {
         setLoading(false);
@@ -58,7 +53,7 @@ export function useAuraBootstrap() {
     let unlisten: (() => void) | undefined;
 
     listen<AppSettings>("settings-updated", (event) => {
-      const settings = event.payload;
+      const settings = mergeSettings(event.payload);
       setSettings(settings);
 
       const manifest = useCharacterStore.getState().manifest;

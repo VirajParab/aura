@@ -12,12 +12,19 @@ pub enum DbError {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct AppSettings {
     pub active_character_id: String,
     pub companion_enabled: bool,
     pub companion_opacity: f32,
+    pub companion_scale: f32,
+    pub position_x_percent: f32,
+    pub position_y_percent: f32,
     pub reduce_motion: bool,
     pub follow_cursor: bool,
+    pub locomotion_enabled: bool,
+    pub idle_bob: bool,
+    pub move_speed: f32,
 }
 
 impl Default for AppSettings {
@@ -26,8 +33,14 @@ impl Default for AppSettings {
             active_character_id: "mochi".to_string(),
             companion_enabled: true,
             companion_opacity: 0.95,
+            companion_scale: 3.0,
+            position_x_percent: 50.0,
+            position_y_percent: 88.0,
             reduce_motion: false,
             follow_cursor: true,
+            locomotion_enabled: true,
+            idle_bob: true,
+            move_speed: 120.0,
         }
     }
 }

@@ -41,8 +41,14 @@ fn set_app_settings(
 ) -> Result<(), String> {
     let conn = state.db.lock().map_err(|e| e.to_string())?;
     save_settings(&conn, &settings).map_err(|e| e.to_string())?;
-    app.emit("settings-updated", &settings)
-        .map_err(|e| e.to_string())?;
+    if let Some(overlay) = app.get_webview_window("overlay") {
+        overlay
+            .emit("settings-updated", &settings)
+            .map_err(|e| e.to_string())?;
+    }
+    if let Some(settings_win) = app.get_webview_window("settings") {
+        let _ = settings_win.emit("settings-updated", &settings);
+    }
     Ok(())
 }
 

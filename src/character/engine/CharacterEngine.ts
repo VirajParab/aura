@@ -1,9 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
+import { mergeSettings, percentToPosition, motionReduced } from "@/character/companionSettings";
 import { AnimationController } from "./AnimationController";
 import { InputHandler } from "./InputHandler";
 import { ObjectSpawner, SPAWN_LABELS } from "./ObjectSpawner";
 import { PhysicsController } from "./PhysicsController";
-import type { CharacterDefinition, InteractionEvent, WidgetType } from "@/types/character";
+import type {
+  AppSettings,
+  CharacterDefinition,
+  InteractionEvent,
+  WidgetType,
+} from "@/types/character";
 import type { CharacterActivity } from "@/types/character";
 
 export interface CharacterEngineCallbacks {
@@ -48,6 +54,7 @@ export class CharacterEngine {
   private character: CharacterDefinition | null = null;
   private physicsLoop: ReturnType<typeof setInterval> | null = null;
   private callbacks: CharacterEngineCallbacks;
+  private lastSettings: AppSettings | null = null;
 
   constructor(callbacks: CharacterEngineCallbacks = {}) {
     this.callbacks = callbacks;
@@ -64,29 +71,75 @@ export class CharacterEngine {
     });
   }
 
-  loadCharacter(character: CharacterDefinition, followCursor: boolean) {
+  loadCharacter(character: CharacterDefinition, settings: AppSettings) {
     this.character = character;
+    this.lastSettings = settings;
     this.input?.dispose();
     this.input = new InputHandler(
       character.id,
       character.interactions,
       (event) => this.handleInteraction(event),
     );
-    this.physics.configure(character, followCursor);
+    this.applyCompanionSettings(settings);
     this.animation.setBase("sit");
+  }
+
+  applyCompanionSettings(settings: AppSettings) {
+    const merged = mergeSettings(settings);
+    this.lastSettings = merged;
+    const reduced = motionReduced(merged);
+    const anchor = percentToPosition(
+      merged.position_x_percent,
+      merged.position_y_percent,
+      window.innerWidth,
+      window.innerHeight,
+    );
+
+    if (this.character) {
+      const effectiveFollow =
+        merged.follow_cursor && !reduced && this.character.behaviors.follow_cursor;
+
+      this.physics.configure(this.character, {
+        followCursor: effectiveFollow,
+        locomotionEnabled: merged.locomotion_enabled && !reduced,
+        idleBob: merged.idle_bob && !reduced,
+        moveSpeed: merged.move_speed,
+        anchorPosition: anchor,
+      });
+
+      if (effectiveFollow) {
+        void getCursorPosition().then((pos) => {
+          this.physics.setCursorPosition(pos);
+        });
+      }
+    } else {
+      this.physics.setPosition(anchor);
+    }
   }
 
   start() {
     this.physicsLoop = setInterval(() => {
       const locomotion = this.physics.update(50);
+      const locomotionEnabled =
+        !!this.lastSettings?.locomotion_enabled &&
+        !!this.lastSettings &&
+        !motionReduced(this.lastSettings);
+
       if (
-        locomotion === "walk" ||
-        locomotion === "run"
+        locomotionEnabled &&
+        (locomotion === "walk" || locomotion === "run")
       ) {
-        if (this.animation.activity === "sit" || this.animation.activity === "walk" || this.animation.activity === "run") {
+        if (
+          this.animation.activity === "sit" ||
+          this.animation.activity === "walk" ||
+          this.animation.activity === "run"
+        ) {
           this.animation.setBase(locomotion);
         }
-      } else if (!this.animation.activity || ["walk", "run"].includes(this.animation.activity)) {
+      } else if (
+        !this.animation.activity ||
+        ["walk", "run"].includes(this.animation.activity)
+      ) {
         this.animation.setBase("sit");
       }
     }, 50);
@@ -168,6 +221,9 @@ export class CharacterEngine {
 
   resize(width: number, height: number) {
     this.physics.setBounds(width, height);
+    if (this.lastSettings) {
+      this.applyCompanionSettings(this.lastSettings);
+    }
   }
 }
 

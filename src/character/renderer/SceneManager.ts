@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { CharacterActivity, CharacterDefinition } from "@/types/character";
+import { DEFAULT_COMPANION_SCALE } from "@/character/companionSettings";
 import { createCharacterRenderer } from "./createCharacterRenderer";
 import type { CharacterRenderer } from "./types";
 
@@ -11,6 +12,7 @@ export class SceneManager {
   readonly camera: THREE.OrthographicCamera;
   readonly renderer: THREE.WebGLRenderer;
   private renderer3d: CharacterRenderer | null = null;
+  private companionScale = DEFAULT_COMPANION_SCALE;
   private animationId: number | null = null;
   private lastTime = 0;
   private onPositionUpdate: ((pos: { x: number; y: number }) => void) | null =
@@ -46,6 +48,11 @@ export class SceneManager {
     this.scene.add(ambient, dir);
   }
 
+  setCompanionScale(scale: number) {
+    this.companionScale = scale;
+    this.renderer3d?.setCompanionScale(scale);
+  }
+
   async setCharacter(definition: CharacterDefinition): Promise<void> {
     if (this.renderer3d) {
       this.scene.remove(this.renderer3d.root);
@@ -53,6 +60,7 @@ export class SceneManager {
       this.renderer3d = null;
     }
     this.renderer3d = await createCharacterRenderer(definition);
+    this.renderer3d.setCompanionScale(this.companionScale);
     this.scene.add(this.renderer3d.root);
   }
 
@@ -73,6 +81,7 @@ export class SceneManager {
     getPosition: () => { x: number; y: number },
     getActivity: () => CharacterActivity,
     onPositionUpdate?: (pos: { x: number; y: number }) => void,
+    getCompanionScale?: () => number,
   ) {
     this.onPositionUpdate = onPositionUpdate ?? null;
 
@@ -81,6 +90,12 @@ export class SceneManager {
       this.lastTime = time;
 
       if (this.renderer3d) {
+        const scale = getCompanionScale?.() ?? this.companionScale;
+        if (scale !== this.companionScale) {
+          this.companionScale = scale;
+        }
+        this.renderer3d.setCompanionScale(this.companionScale);
+
         const pos = getPosition();
         const activity = getActivity();
         this.renderer3d.setActivity(activity);

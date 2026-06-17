@@ -6,6 +6,7 @@ export interface CharacterRenderer {
   load(): Promise<void>;
   setActivity(activity: CharacterActivity): void;
   setPosition(x: number, y: number): void;
+  setCompanionScale(scale: number): void;
   update(deltaMs: number, screenX: number, screenY: number): void;
   dispose(): void;
   hitTest(screenX: number, screenY: number): boolean;

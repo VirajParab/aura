@@ -101,8 +101,20 @@ export interface AppSettings {
   active_character_id: string;
   companion_enabled: boolean;
   companion_opacity: number;
+  /** Multiplier applied on top of each character's manifest scale */
+  companion_scale: number;
+  /** Horizontal anchor as % of screen width (0–100) */
+  position_x_percent: number;
+  /** Vertical anchor as % of screen height (0–100) */
+  position_y_percent: number;
   reduce_motion: boolean;
   follow_cursor: boolean;
+  /** Play walk/run when moving to a target */
+  locomotion_enabled: boolean;
+  /** Gentle idle bobbing at rest */
+  idle_bob: boolean;
+  /** Movement speed in px/s */
+  move_speed: number;
 }
 
 export interface MonitorInfo {

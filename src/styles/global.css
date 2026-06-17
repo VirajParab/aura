@@ -11,13 +11,25 @@ body,
 #root {
   width: 100%;
   height: 100%;
-  overflow: hidden;
   font-family:
     "Inter",
     system-ui,
     -apple-system,
     sans-serif;
+}
+
+html.overlay-mode,
+html.overlay-mode body,
+html.overlay-mode #root {
+  overflow: hidden;
   background: transparent;
+}
+
+html.settings-mode,
+html.settings-mode body,
+html.settings-mode #root {
+  overflow: hidden;
+  background: #0f0f1a;
 }
 
 /* ── Overlay window ── */
@@ -36,10 +48,22 @@ body,
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 5;
+}
+
+.companion-sprite {
+  position: absolute;
+  z-index: 8;
+  pointer-events: none;
+  line-height: 1;
+  transform: translate(-50%, -92%);
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
+  user-select: none;
 }
 
 .character-hud {
   position: absolute;
+  z-index: 12;
   display: flex;
   gap: 6px;
   align-items: center;
@@ -54,6 +78,10 @@ body,
 
 .character-hud-emoji {
   font-size: 14px;
+}
+
+.character-hud-activity-only .character-hud-emoji {
+  display: none;
 }
 
 .character-hud-activity {
@@ -210,17 +238,58 @@ body,
 
 /* ── Settings window ── */
 .settings-app {
-  min-height: 100vh;
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: linear-gradient(160deg, #0f0f1a 0%, #1a1a2e 100%);
   color: #eee;
-  overflow-y: auto;
 }
 
 .settings-app.loading {
-  display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.settings-header {
+  flex-shrink: 0;
+  padding: 20px 24px 0;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 16px 24px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-tab {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: #888;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.settings-tab:hover {
+  color: #ccc;
+}
+
+.settings-tab.active {
+  color: #4fc3f7;
+  border-bottom-color: #4fc3f7;
+}
+
+.settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 32px;
 }
 
 .settings-header h1 {
@@ -241,7 +310,7 @@ body,
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
-  margin: 24px 0;
+  margin: 0 0 8px;
 }
 
 .character-card {
@@ -288,6 +357,12 @@ body,
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.settings-section-first {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
 .settings-section h2 {
   font-size: 16px;
   margin-bottom: 12px;
@@ -311,7 +386,24 @@ body,
 }
 
 .settings-row input[type="range"] {
-  width: 120px;
+  width: 140px;
+}
+
+.settings-row input[type="range"]:disabled {
+  opacity: 0.4;
+}
+
+.settings-value {
+  font-style: normal;
+  color: #4fc3f7;
+  font-size: 12px;
+}
+
+.settings-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #777;
+  line-height: 1.5;
 }
 
 .settings-actions {

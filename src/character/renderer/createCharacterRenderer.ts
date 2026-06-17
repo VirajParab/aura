@@ -2,21 +2,39 @@ import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { VRMLoaderPlugin, type VRM } from "@pixiv/three-vrm";
 import * as THREE from "three";
+import {
+  visualHitRadiusPx,
+  vrmBasePixelScale,
+} from "@/character/companionSettings";
 import type { CharacterActivity, CharacterDefinition } from "@/types/character";
-import { PlaceholderRenderer } from "./PlaceholderRenderer";
 import type { CharacterRenderer } from "./types";
+import { PlaceholderRenderer } from "./PlaceholderRenderer";
 
 export class VrmRenderer implements CharacterRenderer {
   readonly root = new THREE.Group();
+  private readonly modelGroup = new THREE.Group();
   private vrm: VRM | null = null;
   private activity: CharacterActivity = "sit";
   private screenX = 0;
   private screenY = 0;
   private readonly definition: CharacterDefinition;
+  private companionScale = 1;
 
   constructor(definition: CharacterDefinition) {
     this.definition = definition;
-    this.root.scale.setScalar(definition.scale);
+    this.root.add(this.modelGroup);
+    this.setCompanionScale(1);
+  }
+
+  setCompanionScale(scale: number): void {
+    this.companionScale = scale;
+    const pixelScale = vrmBasePixelScale(this.definition.scale, scale);
+    this.modelGroup.scale.setScalar(pixelScale);
+    this.root.scale.setScalar(1);
+  }
+
+  private hitRadiusPx(): number {
+    return visualHitRadiusPx(this.definition.scale, this.companionScale);
   }
 
   async loadFromPath(absolutePath: string): Promise<void> {
@@ -29,7 +47,8 @@ export class VrmRenderer implements CharacterRenderer {
       throw new Error("No VRM data in model file");
     }
     this.vrm = vrm;
-    this.root.add(vrm.scene);
+    this.modelGroup.add(vrm.scene);
+    this.setCompanionScale(this.companionScale);
   }
 
   async load(): Promise<void> {
@@ -53,9 +72,8 @@ export class VrmRenderer implements CharacterRenderer {
 
     if (this.vrm) {
       this.vrm.update(deltaMs / 1000);
-      // Subtle idle sway
       if (this.activity === "sit" || this.activity === "idle") {
-        this.root.rotation.z = Math.sin(Date.now() / 800) * 0.03;
+        this.modelGroup.rotation.z = Math.sin(Date.now() / 800) * 0.03;
       } else if (this.activity === "celebrate" || this.activity === "jump") {
         this.root.position.y += Math.abs(Math.sin(Date.now() / 200)) * 0.15;
       }
@@ -63,7 +81,7 @@ export class VrmRenderer implements CharacterRenderer {
   }
 
   hitTest(screenX: number, screenY: number): boolean {
-    const radius = 70 * this.definition.scale;
+    const radius = this.hitRadiusPx();
     const dx = screenX - this.screenX;
     const dy = screenY - this.screenY;
     return dx * dx + dy * dy < radius * radius;
@@ -84,7 +102,7 @@ export class VrmRenderer implements CharacterRenderer {
       });
       this.vrm = null;
     }
-    this.root.clear();
+    this.modelGroup.clear();
   }
 }
 
