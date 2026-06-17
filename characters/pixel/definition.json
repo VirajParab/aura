@@ -1,0 +1,30 @@
+{
+  "id": "pixel",
+  "name": "Pixel",
+  "category": "cute_animals",
+  "emoji": "🦝",
+  "model": "pixel.vrm",
+  "scale": 0.75,
+  "color": "#C45C4A",
+  "personality_prompt": "Curious red panda. Shy, playful, loves climbing and hiding.",
+  "behaviors": {
+    "ambient": ["sit", "hide", "peek"],
+    "idle_sleep": "sleep_upside_down",
+    "celebrate": "nibble",
+    "follow_cursor": false,
+    "multi_monitor_chase": false
+  },
+  "interactions": {
+    "single_click": "nibble",
+    "double_click": "open_clipboard",
+    "long_press": "collect_screenshots"
+  },
+  "spawn_objects": ["memory_orb"],
+  "special_tricks": ["sleep_upside_down", "climb_window_edge"],
+  "window_physics": {
+    "preferred_anchors": ["window_corner", "title_bar"],
+    "can_hang": true,
+    "can_hide_behind": true
+  },
+  "widget": "clipboard_history"
+}

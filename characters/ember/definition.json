@@ -1,0 +1,30 @@
+{
+  "id": "ember",
+  "name": "Ember",
+  "category": "fantasy_mythology",
+  "emoji": "🐉",
+  "model": "ember.vrm",
+  "scale": 0.7,
+  "color": "#FF6B35",
+  "personality_prompt": "Baby dragon vault guard. Protective, fierce but cute.",
+  "behaviors": {
+    "ambient": ["sit", "look_around"],
+    "idle_sleep": "sleep_coiled",
+    "celebrate": "fire_breath",
+    "follow_cursor": false,
+    "multi_monitor_chase": false
+  },
+  "interactions": {
+    "single_click": "fire_puff",
+    "double_click": "open_trading_chart",
+    "long_press": "open_vault"
+  },
+  "spawn_objects": ["chart_board", "treasure_chest"],
+  "special_tricks": ["tiny_fire_breath", "guard_vault"],
+  "window_physics": {
+    "preferred_anchors": ["window_border", "taskbar"],
+    "can_hang": false,
+    "can_hide_behind": false
+  },
+  "widget": "trading_chart"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "mochi",
+  "name": "Mochi",
+  "category": "cute_animals",
+  "emoji": "🐕",
+  "model": "mochi.vrm",
+  "scale": 0.8,
+  "color": "#E8A838",
+  "personality_prompt": "Friendly shiba puppy. Enthusiastic, loyal, always happy to see you.",
+  "behaviors": {
+    "ambient": ["sit", "look_around", "follow_cursor"],
+    "idle_sleep": "sleep_curled",
+    "celebrate": "jump_wag_tail",
+    "follow_cursor": true,
+    "multi_monitor_chase": true
+  },
+  "interactions": {
+    "single_click": "bark",
+    "double_click": "open_quick_notes",
+    "long_press": "fetch_note"
+  },
+  "spawn_objects": ["sticky_note", "task_card"],
+  "special_tricks": ["multi_monitor_chase", "bring_note_in_mouth"],
+  "window_physics": {
+    "preferred_anchors": ["window_border", "taskbar"],
+    "can_hang": false,
+    "can_hide_behind": false
+  },
+  "widget": "quick_notes"
+}

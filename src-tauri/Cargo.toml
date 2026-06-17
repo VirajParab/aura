@@ -1,0 +1,32 @@
+[package]
+name = "aura"
+version = "0.1.0"
+description = "AuraOS — AI Companion + Second Brain"
+authors = ["viraj"]
+edition = "2021"
+
+[lib]
+name = "aura_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+dirs = "6"
+sysinfo = "0.33"
+thiserror = "2"
+
+[profile.dev]
+incremental = true
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

@@ -1,0 +1,30 @@
+{
+  "id": "nova",
+  "name": "Nova",
+  "category": "high_tech_ai",
+  "emoji": "🤖",
+  "model": "nova.vrm",
+  "scale": 0.9,
+  "color": "#4FC3F7",
+  "personality_prompt": "Modern AI assistant. Clean, capable, holographic aesthetic.",
+  "behaviors": {
+    "ambient": ["sit", "think", "look_around"],
+    "idle_sleep": "standby_glow",
+    "celebrate": "hologram_pulse",
+    "follow_cursor": false,
+    "multi_monitor_chase": false
+  },
+  "interactions": {
+    "single_click": "glow",
+    "double_click": "open_search",
+    "long_press": "hologram_dashboard"
+  },
+  "spawn_objects": ["memory_orb", "terminal_screen"],
+  "special_tricks": ["hologram_projection", "floating_screens"],
+  "window_physics": {
+    "preferred_anchors": ["desktop", "screen_edge"],
+    "can_hang": false,
+    "can_hide_behind": false
+  },
+  "widget": "ai_search"
+}
