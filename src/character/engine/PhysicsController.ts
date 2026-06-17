@@ -27,6 +27,8 @@ export class PhysicsController {
   };
   private bounds = { width: window.innerWidth, height: window.innerHeight };
   private characterSupportsFollow = true;
+  private falling = false;
+  private fallVelocity = 0;
 
   constructor(initial: CharacterScreenPosition) {
     const anchorY = initial.y;
@@ -49,14 +51,15 @@ export class PhysicsController {
     this.config = { ...config, followCursor: effectiveFollow };
     this.state.anchorY = config.anchorPosition.y;
 
-    // Always apply anchor immediately (vertical always; horizontal when not following)
     this.state.position.y = config.anchorPosition.y;
 
     if (!effectiveFollow) {
-      this.target = null;
-      this.state.position.x = config.anchorPosition.x;
-      this.state.grounded = true;
-      this.state.velocity = { x: 0, y: 0 };
+      if (!this.falling) {
+        this.target = null;
+        this.state.position.x = config.anchorPosition.x;
+        this.state.grounded = true;
+        this.state.velocity = { x: 0, y: 0 };
+      }
     } else if (this.target) {
       this.target.y = config.anchorPosition.y;
     }
@@ -78,10 +81,28 @@ export class PhysicsController {
     this.target = null;
     this.state.velocity = { x: 0, y: 0 };
     this.state.grounded = true;
+    this.falling = false;
+    this.fallVelocity = 0;
   }
 
   moveTo(target: CharacterScreenPosition) {
-    this.target = target;
+    if (this.falling) return;
+    this.target = { ...target };
+  }
+
+  triggerFall() {
+    this.falling = true;
+    this.fallVelocity = 0;
+    this.target = null;
+    this.state.grounded = false;
+  }
+
+  isFalling(): boolean {
+    return this.falling;
+  }
+
+  isFollowingCursor(): boolean {
+    return this.config.followCursor && this.characterSupportsFollow && !!this.target;
   }
 
   getState(): PhysicsState {
@@ -89,14 +110,36 @@ export class PhysicsController {
   }
 
   isMoving(): boolean {
+    if (this.falling) return true;
     if (!this.target) return false;
     const dx = this.target.x - this.state.position.x;
     return Math.abs(dx) > 2;
   }
 
-  update(deltaMs: number): "walk" | "run" | "sit" {
+  getVelocityX(): number {
+    return this.state.velocity.x;
+  }
+
+  update(deltaMs: number): "walk" | "run" | "sit" | "fall" {
     const dt = deltaMs / 1000;
     const speed = this.config.moveSpeed;
+
+    if (this.falling) {
+      this.fallVelocity += 420 * dt;
+      this.state.position.y += this.fallVelocity * dt;
+      this.state.velocity = { x: 0, y: this.fallVelocity };
+
+      if (this.state.position.y >= this.config.anchorPosition.y) {
+        this.state.position.y = this.config.anchorPosition.y;
+        this.state.anchorY = this.config.anchorPosition.y;
+        this.state.velocity = { x: 0, y: 0 };
+        this.state.grounded = true;
+        this.falling = false;
+        this.fallVelocity = 0;
+        return "sit";
+      }
+      return "fall";
+    }
 
     if (this.target) {
       const dx = this.target.x - this.state.position.x;
@@ -117,14 +160,14 @@ export class PhysicsController {
         return "sit";
       }
 
-      const moveSpeed =
-        this.config.followCursor && dist > 200 ? speed * 1.8 : speed;
+      const chasing = this.config.followCursor && this.characterSupportsFollow;
+      const moveSpeed = chasing && dist > 200 ? speed * 1.8 : speed;
       const nx = (dx / dist) * moveSpeed * dt;
       const ny = (dy / dist) * moveSpeed * dt;
       this.state.position.x += nx;
       this.state.position.y += ny;
       this.state.velocity = { x: nx / dt, y: ny / dt };
-      return this.config.followCursor && dist > 120 ? "run" : "walk";
+      return chasing && dist > 120 ? "run" : "walk";
     }
 
     if (!this.config.followCursor) {
@@ -132,7 +175,6 @@ export class PhysicsController {
       this.state.position.y = this.config.anchorPosition.y;
       this.state.anchorY = this.config.anchorPosition.y;
     } else {
-      // While following cursor, still lock Y to the configured floor line
       this.state.position.y = this.config.anchorPosition.y;
       this.state.anchorY = this.config.anchorPosition.y;
     }
@@ -142,17 +184,11 @@ export class PhysicsController {
         this.state.anchorY + Math.sin(Date.now() / 500) * 2;
     }
 
+    this.state.velocity = { x: 0, y: 0 };
     return "sit";
   }
 
   applyFall() {
-    this.state.grounded = false;
-    this.state.velocity.y += 0.5;
-    this.state.position.y += this.state.velocity.y;
-    if (this.state.position.y >= this.state.anchorY) {
-      this.state.position.y = this.state.anchorY;
-      this.state.velocity = { x: 0, y: 0 };
-      this.state.grounded = true;
-    }
+    this.triggerFall();
   }
 }

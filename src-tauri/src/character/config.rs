@@ -76,7 +76,11 @@ pub struct CharacterManifest {
 }
 
 pub fn bundled_characters_dir(resource_dir: &PathBuf) -> PathBuf {
-    resource_dir.join("characters")
+    if resource_dir.ends_with("characters") {
+        resource_dir.clone()
+    } else {
+        resource_dir.join("characters")
+    }
 }
 
 pub fn load_manifest(resource_dir: &PathBuf) -> Result<CharacterManifest, CharacterError> {

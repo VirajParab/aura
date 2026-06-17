@@ -6,6 +6,7 @@ import {
 } from "@/character/companionSettings";
 import { feedTreat, selectCharacter, saveSettings } from "@/character/hooks/useAuraBootstrap";
 import { useCharacterStore } from "@/character/store/characterStore";
+import { OnboardingModal } from "@/features/onboarding/OnboardingModal";
 import type { AppSettings, CharacterDefinition } from "@/types/character";
 
 type SettingsTab = "characters" | "appearance" | "movement" | "display";
@@ -49,7 +50,15 @@ export function SettingsApp() {
 
   const handleSelect = async (character: CharacterDefinition) => {
     await selectCharacter(character);
+    if (!settings.onboarding_completed) {
+      const next = { ...settings, onboarding_completed: true };
+      setSettings(next);
+      await saveSettings(next);
+    }
   };
+
+  const showOnboarding =
+    !settings.onboarding_completed && launchCharacters.length > 0;
 
   const toggle = async (key: keyof AppSettings) => {
     if (!settings) return;
@@ -72,6 +81,9 @@ export function SettingsApp() {
 
   return (
     <div className="settings-app">
+      {showOnboarding && (
+        <OnboardingModal characters={launchCharacters} onSelect={handleSelect} />
+      )}
       <header className="settings-header">
         <h1>AuraOS</h1>
         <p>Companion settings</p>
@@ -130,9 +142,19 @@ export function SettingsApp() {
                 <div className="settings-hints">
                   <h3>Interactions</h3>
                   <ul>
-                    <li>Click — wave, bark, or character trick</li>
-                    <li>Double-click — open widget</li>
-                    <li>Long press — spawn object or special action</li>
+                    <li>
+                      Click — {activeCharacter.interactions.single_click.replace(/_/g, " ")}
+                    </li>
+                    <li>
+                      Double-click — {activeCharacter.interactions.double_click.replace(/_/g, " ")}
+                      {" "}(alternates on repeat)
+                    </li>
+                    <li>
+                      Long press — {activeCharacter.interactions.long_press.replace(/_/g, " ")}
+                    </li>
+                    <li>
+                      Spawns — {activeCharacter.spawn_objects.join(", ").replace(/_/g, " ")}
+                    </li>
                   </ul>
                 </div>
               </section>
@@ -280,6 +302,14 @@ export function SettingsApp() {
                 onChange={() => toggle("companion_enabled")}
               />
               Show companion on desktop
+            </label>
+            <label className="settings-toggle">
+              <input
+                type="checkbox"
+                checked={settings.reaction_preferences}
+                onChange={() => toggle("reaction_preferences")}
+              />
+              Activity reactions (coding, trading, captures)
             </label>
             <label className="settings-toggle">
               <input

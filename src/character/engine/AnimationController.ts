@@ -1,4 +1,9 @@
 import type { CharacterActivity } from "@/types/character";
+import {
+  CELEBRATE_ACTIVITY_MAP,
+  IDLE_SLEEP_ACTIVITY_MAP,
+  INTERACTION_ACTIVITY_MAP,
+} from "./characterPlatform";
 
 export const CORE_ACTIVITIES: CharacterActivity[] = [
   "sit",
@@ -32,6 +37,10 @@ const ACTIVITY_DURATION_MS: Partial<Record<CharacterActivity, number>> = {
   peek: 1000,
   roll: 1500,
   stretch: 2000,
+  look_around: 2500,
+  read: 3000,
+  think: 3000,
+  hide: 2000,
 };
 
 type ActivityListener = (activity: CharacterActivity, prev: CharacterActivity) => void;
@@ -51,6 +60,10 @@ export class AnimationController {
     return this.base;
   }
 
+  get hasActiveOverlay(): boolean {
+    return this.overlay !== null;
+  }
+
   subscribe(listener: ActivityListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -61,11 +74,17 @@ export class AnimationController {
     this.listeners.forEach((l) => l(next, prev));
   }
 
-  setBase(activity: CharacterActivity) {
-    if (this.overlay) return;
+  forceBase(activity: CharacterActivity) {
+    if (this.overlayTimer) clearTimeout(this.overlayTimer);
+    this.overlay = null;
     this.base = activity;
     this.current = activity;
     this.emit(activity);
+  }
+
+  setBase(activity: CharacterActivity) {
+    if (this.overlay) return;
+    this.forceBase(activity);
   }
 
   playOverlay(activity: CharacterActivity) {
@@ -82,17 +101,15 @@ export class AnimationController {
   }
 
   playInteraction(animationName: string) {
-    const map: Record<string, CharacterActivity> = {
-      bark: "wave",
-      nibble: "eat",
-      wave: "wave",
-      glow: "think",
-      fire_puff: "celebrate",
-      cherry_blossom_dance: "dance",
-      hologram_dashboard: "think",
-      fetch_note: "celebrate",
-    };
-    this.playOverlay(map[animationName] ?? "wave");
+    this.playOverlay(INTERACTION_ACTIVITY_MAP[animationName] ?? "wave");
+  }
+
+  playCelebrate(behaviorName: string) {
+    this.playOverlay(CELEBRATE_ACTIVITY_MAP[behaviorName] ?? "celebrate");
+  }
+
+  playIdleSleep(sleepName: string) {
+    this.forceBase(IDLE_SLEEP_ACTIVITY_MAP[sleepName] ?? "sleep");
   }
 
   dispose() {

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { visualHitRadiusPx } from "@/character/companionSettings";
+import { companionBodyHitCircle } from "@/character/companionSettings";
 import type { CharacterActivity, CharacterDefinition } from "@/types/character";
 import type { CharacterRenderer } from "./types";
 
@@ -22,8 +22,12 @@ export class PlaceholderRenderer implements CharacterRenderer {
     this.companionScale = scale;
   }
 
-  private hitRadiusPx(): number {
-    return visualHitRadiusPx(this.definition.scale, this.companionScale);
+  private hitCircle() {
+    return companionBodyHitCircle(
+      { x: this.screenX, y: this.screenY },
+      this.definition.scale,
+      this.companionScale,
+    );
   }
 
   async load(): Promise<void> {
@@ -47,9 +51,9 @@ export class PlaceholderRenderer implements CharacterRenderer {
   }
 
   hitTest(screenX: number, screenY: number): boolean {
-    const radius = this.hitRadiusPx();
-    const dx = screenX - this.screenX;
-    const dy = screenY - this.screenY;
+    const { x, y, radius } = this.hitCircle();
+    const dx = screenX - x;
+    const dy = screenY - y;
     return dx * dx + dy * dy < radius * radius;
   }
 

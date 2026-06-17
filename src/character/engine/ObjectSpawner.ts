@@ -42,6 +42,12 @@ export class ObjectSpawner {
     this.notify();
   }
 
+  clear() {
+    if (this.objects.length === 0) return;
+    this.objects = [];
+    this.notify();
+  }
+
   getAll(): SpawnableObject[] {
     return [...this.objects];
   }

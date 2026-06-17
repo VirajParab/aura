@@ -5,6 +5,8 @@ export interface CharacterRenderer {
   readonly root: THREE.Group;
   load(): Promise<void>;
   setActivity(activity: CharacterActivity): void;
+  setVelocityX?(velocityX: number): void;
+  setPoseModifiers?(modifiers: Partial<import("@/character/engine/activityPose").PoseContext>): void;
   setPosition(x: number, y: number): void;
   setCompanionScale(scale: number): void;
   update(deltaMs: number, screenX: number, screenY: number): void;

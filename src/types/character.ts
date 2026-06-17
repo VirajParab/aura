@@ -116,6 +116,8 @@ export interface AppSettings {
   idle_bob: boolean;
   /** Movement speed in px/s */
   move_speed: number;
+  onboarding_completed: boolean;
+  reaction_preferences: boolean;
 }
 
 export interface MonitorInfo {

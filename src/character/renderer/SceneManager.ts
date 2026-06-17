@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { CharacterActivity, CharacterDefinition } from "@/types/character";
+import type { PoseContext } from "@/character/engine/activityPose";
 import { DEFAULT_COMPANION_SCALE } from "@/character/companionSettings";
 import { createCharacterRenderer, VrmRenderer } from "./createCharacterRenderer";
 import type { CharacterRenderer } from "./types";
@@ -86,6 +87,8 @@ export class SceneManager {
     getActivity: () => CharacterActivity,
     onPositionUpdate?: (pos: { x: number; y: number }) => void,
     getCompanionScale?: () => number,
+    getVelocityX?: () => number,
+    getPoseModifiers?: () => Partial<PoseContext>,
   ) {
     this.onPositionUpdate = onPositionUpdate ?? null;
 
@@ -103,6 +106,8 @@ export class SceneManager {
         const pos = getPosition();
         const activity = getActivity();
         this.renderer3d.setActivity(activity);
+        this.renderer3d.setVelocityX?.(getVelocityX?.() ?? 0);
+        this.renderer3d.setPoseModifiers?.(getPoseModifiers?.() ?? {});
         this.renderer3d.update(delta, pos.x, pos.y);
         this.onPositionUpdate?.(pos);
       }

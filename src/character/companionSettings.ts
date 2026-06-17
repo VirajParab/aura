@@ -19,6 +19,8 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   locomotion_enabled: true,
   idle_bob: true,
   move_speed: 120,
+  onboarding_completed: false,
+  reaction_preferences: true,
 };
 
 export function mergeSettings(partial: Partial<AppSettings> | null | undefined): AppSettings {
@@ -63,7 +65,21 @@ export function visualHitRadiusPx(
   definitionScale: number,
   companionScale: number,
 ): number {
-  return characterHeightPx(definitionScale, companionScale) * 0.45;
+  return characterHeightPx(definitionScale, companionScale) * 0.58;
+}
+
+/** Screen-space hit circle covering the full character body (feet anchor at position). */
+export function companionBodyHitCircle(
+  position: { x: number; y: number },
+  definitionScale: number,
+  companionScale: number,
+): { x: number; y: number; radius: number } {
+  const heightPx = characterHeightPx(definitionScale, companionScale);
+  return {
+    x: position.x,
+    y: position.y - heightPx * 0.5,
+    radius: visualHitRadiusPx(definitionScale, companionScale),
+  };
 }
 
 export function motionReduced(settings: AppSettings): boolean {

@@ -80,9 +80,85 @@ pub fn get_visible_windows() -> Vec<WindowInfo> {
 
 #[cfg(target_os = "linux")]
 fn linux_get_windows() -> Vec<WindowInfo> {
-    // Basic stub: returns empty until X11/Wayland integration is added.
-    // Frontend uses monitor bounds for desktop anchoring in Phase 1.
+    use std::process::Command;
+
+    let output = Command::new("wmctrl").args(["-lG"]).output();
+    if let Ok(out) = output {
+        if out.status.success() {
+            let text = String::from_utf8_lossy(&out.stdout);
+            return parse_wmctrl_lines(&text);
+        }
+    }
     vec![]
+}
+
+#[cfg(target_os = "linux")]
+fn parse_wmctrl_lines(text: &str) -> Vec<WindowInfo> {
+    text.lines()
+        .enumerate()
+        .filter_map(|(i, line)| {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() < 9 {
+                return None;
+            }
+            let id = u32::from_str_radix(parts[0].trim_start_matches("0x"), 16).ok()?;
+            let x: i32 = parts[2].parse().ok()?;
+            let y: i32 = parts[3].parse().ok()?;
+            let w: u32 = parts[4].parse().ok()?;
+            let h: u32 = parts[5].parse().ok()?;
+            let title = parts[8..].join(" ");
+            Some(WindowInfo {
+                id,
+                title: title.clone(),
+                app_name: title,
+                rect: Rect {
+                    x,
+                    y,
+                    width: w,
+                    height: h,
+                },
+                z_order: i as i32,
+                is_minimized: false,
+                monitor_id: 0,
+            })
+        })
+        .collect()
+}
+
+pub fn get_active_window() -> Option<WindowInfo> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+        let id_out = Command::new("xdotool")
+            .args(["getactivewindow", "getwindowname"])
+            .output()
+            .ok()?;
+        if !id_out.status.success() {
+            return None;
+        }
+        let stdout = String::from_utf8_lossy(&id_out.stdout);
+        let lines: Vec<&str> = stdout.lines().collect();
+        let title = lines.last().unwrap_or(&"Unknown").to_string();
+        let windows = linux_get_windows();
+        return windows.into_iter().find(|w| w.title == title).or(Some(WindowInfo {
+            id: 0,
+            title: title.clone(),
+            app_name: title,
+            rect: Rect {
+                x: 0,
+                y: 0,
+                width: 800,
+                height: 600,
+            },
+            z_order: 0,
+            is_minimized: false,
+            monitor_id: 0,
+        }));
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        None
+    }
 }
 
 pub fn get_default_anchor(monitors: &[MonitorInfo]) -> Option<Anchor> {

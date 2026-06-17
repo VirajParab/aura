@@ -1,61 +1,76 @@
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
-import {
-  characterHeightPx,
-  mergeSettings,
-} from "@/character/companionSettings";
+import { mergeSettings } from "@/character/companionSettings";
+import { CompanionActionMenu } from "@/character/components/CompanionActionMenu";
+import { CharacterHitTarget } from "@/character/components/CharacterHitTarget";
 import { CompanionSprite } from "@/character/components/CompanionSprite";
+import { CharacterEffects } from "@/character/components/CharacterEffects";
+import { CompanionStateMachine } from "@/character/engine/CompanionStateMachine";
+import {
+  usesFloatIdle,
+  usesUpsideDownSleep,
+} from "@/character/engine/characterPlatform";
+import { SPAWN_WIDGET_MAP } from "@/character/engine/spawnWidgets";
 import {
   CharacterEngine,
   getCursorPosition,
-  setOverlayClickthrough,
   setupOverlayWindow,
 } from "@/character/engine/CharacterEngine";
+import { syncOverlayHitRegions } from "@/character/engine/overlayHit";
 import { useOverlaySettingsSync } from "@/character/hooks/useOverlaySettingsSync";
 import { SceneManager } from "@/character/renderer/SceneManager";
 import { useCharacterStore } from "@/character/store/characterStore";
 import { SpeechBubble } from "./SpeechBubble";
 import { SpawnedObjectsLayer } from "./SpawnedObjectsLayer";
 import { WidgetPanel } from "./WidgetPanel";
-import type { CharacterDefinition, SpawnableObject } from "@/types/character";
-import type { AppSettings } from "@/types/character";
-
-function hitCompanion(
-  x: number,
-  y: number,
-  position: { x: number; y: number },
-  character: CharacterDefinition,
-  settings: AppSettings,
-): boolean {
-  const radius = characterHeightPx(character.scale, settings.companion_scale) * 0.45;
-  const dx = x - position.x;
-  const dy = y - position.y;
-  return dx * dx + dy * dy < radius * radius;
-}
+import type { SpawnableObject, CharacterActivity } from "@/types/character";
 
 export function CharacterOverlay() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<CharacterEngine | null>(null);
   const sceneRef = useRef<SceneManager | null>(null);
+  const stateMachineRef = useRef(new CompanionStateMachine());
   const loadedCharacterIdRef = useRef<string | null>(null);
+  const hitSyncRef = useRef(0);
+  const actionMenuOpenRef = useRef(false);
   const [spawned, setSpawned] = useState<SpawnableObject[]>([]);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [velocityX, setVelocityX] = useState(0);
   const [characterLoading, setCharacterLoading] = useState(false);
   const [engineReady, setEngineReady] = useState(false);
   const [show3dCanvas, setShow3dCanvas] = useState(false);
+  const [domInput, setDomInput] = useState(false);
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [activeEffect, setActiveEffect] = useState<
+    "cherry_blossom" | "hologram" | "fire" | "none"
+  >("none");
 
   const activeCharacter = useCharacterStore((s) => s.activeCharacter);
   const settings = useCharacterStore((s) => s.settings);
   const currentActivity = useCharacterStore((s) => s.currentActivity);
   const speechBubble = useCharacterStore((s) => s.speechBubble);
   const activeWidget = useCharacterStore((s) => s.activeWidget);
+  const widgetVariant = useCharacterStore((s) => s.widgetVariant);
+  const hideCompanionVisual = useCharacterStore((s) => s.hideCompanionVisual);
   const setActivity = useCharacterStore((s) => s.setActivity);
   const setSpeechBubble = useCharacterStore((s) => s.setSpeechBubble);
   const openWidget = useCharacterStore((s) => s.openWidget);
+  const setHideCompanionVisual = useCharacterStore((s) => s.setHideCompanionVisual);
 
   const mergedSettings = mergeSettings(settings);
 
+  useEffect(() => {
+    actionMenuOpenRef.current = actionMenuOpen;
+  }, [actionMenuOpen]);
+
   useOverlaySettingsSync(engineRef, sceneRef, engineReady);
+
+  useEffect(() => {
+    invoke<boolean>("overlay_uses_dom_input")
+      .then(setDomInput)
+      .catch(() => setDomInput(false));
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -70,6 +85,15 @@ export function CharacterOverlay() {
         onActivityChange: setActivity,
         onSpeech: setSpeechBubble,
         onWidgetOpen: openWidget,
+        onHideVisual: setHideCompanionVisual,
+        onEffectChange: setActiveEffect,
+        onActionMenuChange: (open) => {
+          if (open) {
+            setActionMenuOpen((was) => !was);
+          } else {
+            setActionMenuOpen(false);
+          }
+        },
       });
       engineRef.current = engine;
 
@@ -86,10 +110,45 @@ export function CharacterOverlay() {
           () => engine.getPosition(),
           () => engine.getActivity(),
           (pos) => {
-            if (mounted) setPosition(pos);
+            if (mounted) {
+              setPosition(pos);
+              setVelocityX(engine.getVelocityX());
+
+              const char = useCharacterStore.getState().activeCharacter;
+              if (char) {
+                const now = performance.now();
+                if (now - hitSyncRef.current >= 16) {
+                  hitSyncRef.current = now;
+                  const s = mergeSettings(useCharacterStore.getState().settings);
+                  const force =
+                    !!useCharacterStore.getState().activeWidget ||
+                    actionMenuOpenRef.current;
+                  void syncOverlayHitRegions(
+                    pos,
+                    char,
+                    s,
+                    engine.spawner.getAll(),
+                    force,
+                  );
+                }
+              }
+            }
           },
           () =>
             mergeSettings(useCharacterStore.getState().settings).companion_scale,
+          () => engine.getVelocityX(),
+          () => {
+            const char = useCharacterStore.getState().activeCharacter;
+            const activity = engine.getActivity();
+            return {
+              upsideDown:
+                !!char &&
+                usesUpsideDownSleep(char) &&
+                activity === "sleep",
+              hanging: engine.isHangMode(),
+              floating: !!char && usesFloatIdle(char) && activity === "sit",
+            };
+          },
         );
       }
 
@@ -108,6 +167,17 @@ export function CharacterOverlay() {
       }
 
       engine.start();
+
+      const bootChar = useCharacterStore.getState().activeCharacter;
+      if (bootChar) {
+        void syncOverlayHitRegions(
+          engine.getPosition(),
+          bootChar,
+          bootSettings,
+          engine.spawner.getAll(),
+          false,
+        );
+      }
 
       const onResize = () => {
         const width = window.innerWidth;
@@ -204,7 +274,84 @@ export function CharacterOverlay() {
   ]);
 
   useEffect(() => {
+    if (!engineReady || !activeCharacter) return;
+    void syncOverlayHitRegions(
+      position,
+      activeCharacter,
+      mergedSettings,
+      spawned,
+      !!activeWidget || actionMenuOpen,
+    );
+  }, [
+    engineReady,
+    activeCharacter,
+    position.x,
+    position.y,
+    mergedSettings.companion_scale,
+    activeWidget,
+    actionMenuOpen,
+    spawned,
+  ]);
+
+  useEffect(() => {
+    if (domInput) return;
+
+    let unlistenPointer: (() => void) | undefined;
+
+    listen<{ phase: "down" | "up"; x: number; y: number }>(
+      "companion-pointer",
+      (event) => {
+        const { phase, x, y } = event.payload;
+        if (phase === "down") {
+          engineRef.current?.handlePointerDown(x, y);
+        } else {
+          engineRef.current?.handlePointerUp(x, y);
+        }
+      },
+    ).then((fn) => {
+      unlistenPointer = fn;
+    });
+
+    return () => unlistenPointer?.();
+  }, [domInput]);
+
+  const handleCharacterPointerDown = (x: number, y: number) => {
+    engineRef.current?.handlePointerDown(x, y);
+  };
+
+  const handleCharacterPointerUp = (x: number, y: number) => {
+    engineRef.current?.handlePointerUp(x, y);
+  };
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      void stateMachineRef.current.poll();
+    }, 3000);
+    const unsub = stateMachineRef.current.subscribe((_state, activity) => {
+      const settings = mergeSettings(useCharacterStore.getState().settings);
+      if (!settings.reaction_preferences) return;
+      if (!engineRef.current?.animation.hasActiveOverlay) {
+        engineRef.current?.animation.setBase(activity);
+      }
+    });
+    return () => {
+      clearInterval(id);
+      unsub();
+    };
+  }, []);
+
+  useEffect(() => {
+    let unlistenAura: (() => void) | undefined;
     let unlisten: (() => void) | undefined;
+
+    listen<{ type: string }>("aura-event", (event) => {
+      stateMachineRef.current.onAuraEvent(event.payload.type);
+      if (event.payload.type === "clipboard_copy") {
+        engineRef.current?.animation.playOverlay("peek");
+      }
+    }).then((fn) => {
+      unlistenAura = fn;
+    });
 
     listen<{ action: string }>("companion-action", (event) => {
       if (event.payload.action === "feed_treat") {
@@ -215,6 +362,7 @@ export function CharacterOverlay() {
     });
 
     return () => {
+      unlistenAura?.();
       unlisten?.();
     };
   }, []);
@@ -225,31 +373,6 @@ export function CharacterOverlay() {
     return () => clearTimeout(id);
   }, [speechBubble, setSpeechBubble]);
 
-  const isHit = (x: number, y: number) => {
-    if (!activeCharacter) return false;
-    const rendererHit = sceneRef.current
-      ?.getCharacterRenderer()
-      ?.hitTest(x, y);
-    if (rendererHit) return true;
-    return hitCompanion(x, y, position, activeCharacter, mergedSettings);
-  };
-
-  const handlePointerMove = async (e: React.PointerEvent) => {
-    await setOverlayClickthrough(!isHit(e.clientX, e.clientY));
-  };
-
-  const handlePointerDown = async (e: React.PointerEvent) => {
-    if (isHit(e.clientX, e.clientY)) {
-      await setOverlayClickthrough(false);
-      engineRef.current?.handlePointerDown(e.clientX, e.clientY);
-    }
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    engineRef.current?.handlePointerUp(e.clientX, e.clientY);
-    setOverlayClickthrough(true);
-  };
-
   if (!mergedSettings.companion_enabled || !activeCharacter) {
     return <div className="overlay-root" />;
   }
@@ -257,19 +380,42 @@ export function CharacterOverlay() {
   return (
     <div
       className="overlay-root"
-      style={{ opacity: mergedSettings.companion_opacity }}
-      onPointerMove={handlePointerMove}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
+      style={{
+        opacity:
+          mergedSettings.companion_opacity * (hideCompanionVisual ? 0.25 : 1),
+      }}
     >
       <canvas
         ref={canvasRef}
         className={`overlay-canvas${show3dCanvas ? "" : " overlay-canvas--hidden"}`}
       />
-      {!show3dCanvas && (
+      {!show3dCanvas && activeCharacter && (
         <CompanionSprite
           character={activeCharacter}
           settings={mergedSettings}
+          position={position}
+          activity={currentActivity as CharacterActivity}
+          velocityX={velocityX}
+          upsideDown={
+            usesUpsideDownSleep(activeCharacter) && currentActivity === "sleep"
+          }
+          hanging={engineRef.current?.isHangMode() ?? false}
+          floating={usesFloatIdle(activeCharacter) && currentActivity === "sit"}
+        />
+      )}
+      {activeCharacter && (
+        <CharacterHitTarget
+          character={activeCharacter}
+          settings={mergedSettings}
+          position={position}
+          onPointerDown={domInput ? handleCharacterPointerDown : undefined}
+          onPointerUp={domInput ? handleCharacterPointerUp : undefined}
+        />
+      )}
+      {activeCharacter && (
+        <CharacterEffects
+          character={activeCharacter}
+          effect={activeEffect}
           position={position}
         />
       )}
@@ -282,6 +428,11 @@ export function CharacterOverlay() {
         objects={spawned}
         characterPosition={position}
         onRemove={(id) => engineRef.current?.spawner.remove(id)}
+        onOpen={(type) => {
+          engineRef.current?.closeActionMenu();
+          const widget = SPAWN_WIDGET_MAP[type];
+          if (widget) openWidget(widget);
+        }}
       />
       {speechBubble && (
         <SpeechBubble
@@ -290,10 +441,19 @@ export function CharacterOverlay() {
           emoji={activeCharacter.emoji}
         />
       )}
-      {activeWidget && (
+      {actionMenuOpen && activeCharacter && (
+        <CompanionActionMenu
+          character={activeCharacter}
+          position={position}
+          onSelect={(action) => engineRef.current?.executeMenuAction(action)}
+          onClose={() => engineRef.current?.closeActionMenu()}
+        />
+      )}
+      {activeWidget && activeCharacter && (
         <WidgetPanel
           widget={activeWidget}
           character={activeCharacter}
+          variant={widgetVariant}
           onClose={() => openWidget(null)}
         />
       )}

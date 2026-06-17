@@ -3,9 +3,10 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { VRMLoaderPlugin, type VRM } from "@pixiv/three-vrm";
 import * as THREE from "three";
 import {
-  visualHitRadiusPx,
+  companionBodyHitCircle,
   vrmBasePixelScale,
 } from "@/character/companionSettings";
+import { computeActivityTransform, type PoseContext } from "@/character/engine/activityPose";
 import type { CharacterActivity, CharacterDefinition } from "@/types/character";
 import type { CharacterRenderer } from "./types";
 import { PlaceholderRenderer } from "./PlaceholderRenderer";
@@ -15,8 +16,11 @@ export class VrmRenderer implements CharacterRenderer {
   private readonly modelGroup = new THREE.Group();
   private vrm: VRM | null = null;
   private activity: CharacterActivity = "sit";
+  private activityStartedAt = Date.now();
   private screenX = 0;
   private screenY = 0;
+  private velocityX = 0;
+  private poseModifiers: Partial<PoseContext> = {};
   private readonly definition: CharacterDefinition;
   private companionScale = 1;
 
@@ -34,8 +38,19 @@ export class VrmRenderer implements CharacterRenderer {
     this.root.scale.setScalar(1);
   }
 
-  private hitRadiusPx(): number {
-    return visualHitRadiusPx(this.definition.scale, this.companionScale);
+  private hitCircle() {
+    return companionBodyHitCircle(
+      { x: this.screenX, y: this.screenY },
+      this.definition.scale,
+      this.companionScale,
+    );
+  }
+
+  hitTest(screenX: number, screenY: number): boolean {
+    const { x, y, radius } = this.hitCircle();
+    const dx = screenX - x;
+    const dy = screenY - y;
+    return dx * dx + dy * dy < radius * radius;
   }
 
   async loadFromPath(absolutePath: string): Promise<void> {
@@ -63,7 +78,18 @@ export class VrmRenderer implements CharacterRenderer {
   }
 
   setActivity(activity: CharacterActivity): void {
-    this.activity = activity;
+    if (activity !== this.activity) {
+      this.activity = activity;
+      this.activityStartedAt = Date.now();
+    }
+  }
+
+  setVelocityX(velocityX: number): void {
+    this.velocityX = velocityX;
+  }
+
+  setPoseModifiers(modifiers: Partial<PoseContext>): void {
+    this.poseModifiers = modifiers;
   }
 
   setPosition(_x: number, _y: number): void {
@@ -75,23 +101,35 @@ export class VrmRenderer implements CharacterRenderer {
     this.screenY = screenY;
     const tx = screenX - window.innerWidth / 2;
     const ty = window.innerHeight / 2 - screenY;
-    this.root.position.set(tx, ty, 0);
+
+    const pose = computeActivityTransform(this.activity, {
+      timeMs: performance.now(),
+      activityElapsedMs: performance.now() - this.activityStartedAt,
+      velocityX: this.velocityX,
+      moving: Math.abs(this.velocityX) > 8,
+      ...this.poseModifiers,
+    });
+
+    const flip = pose.rotationY > Math.PI / 2 ? -1 : 1;
+    const pixelScale = vrmBasePixelScale(this.definition.scale, this.companionScale);
+
+    this.root.position.set(
+      tx + pose.offsetX,
+      ty + pose.offsetY,
+      0,
+    );
+
+    this.modelGroup.rotation.z = pose.rotationZ;
+    this.modelGroup.rotation.y = Math.PI + pose.rotationY;
+    this.modelGroup.scale.set(
+      pixelScale * pose.scaleX * flip,
+      pixelScale * pose.scaleY,
+      pixelScale,
+    );
 
     if (this.vrm) {
       this.vrm.update(deltaMs / 1000);
-      if (this.activity === "sit" || this.activity === "idle") {
-        this.modelGroup.rotation.z = Math.sin(Date.now() / 800) * 0.03;
-      } else if (this.activity === "celebrate" || this.activity === "jump") {
-        this.root.position.y += Math.abs(Math.sin(Date.now() / 200)) * 0.15;
-      }
     }
-  }
-
-  hitTest(screenX: number, screenY: number): boolean {
-    const radius = this.hitRadiusPx();
-    const dx = screenX - this.screenX;
-    const dy = screenY - this.screenY;
-    return dx * dx + dy * dy < radius * radius;
   }
 
   dispose(): void {

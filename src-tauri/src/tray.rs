@@ -92,9 +92,6 @@ pub fn ensure_overlay_on_top(app: AppHandle) -> Result<(), String> {
         overlay
             .set_always_on_top(true)
             .map_err(|e| e.to_string())?;
-        overlay
-            .set_ignore_cursor_events(true)
-            .map_err(|e| e.to_string())?;
     }
     Ok(())
 }

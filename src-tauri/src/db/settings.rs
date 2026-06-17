@@ -25,6 +25,8 @@ pub struct AppSettings {
     pub locomotion_enabled: bool,
     pub idle_bob: bool,
     pub move_speed: f32,
+    pub onboarding_completed: bool,
+    pub reaction_preferences: bool,
 }
 
 impl Default for AppSettings {
@@ -41,6 +43,8 @@ impl Default for AppSettings {
             locomotion_enabled: true,
             idle_bob: true,
             move_speed: 120.0,
+            onboarding_completed: false,
+            reaction_preferences: true,
         }
     }
 }
@@ -58,20 +62,6 @@ pub fn init_db() -> Result<Connection, DbError> {
         std::fs::create_dir_all(parent).map_err(DbError::Io)?;
     }
     let conn = Connection::open(&path)?;
-    conn.execute_batch(
-        "
-        CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        );
-        CREATE TABLE IF NOT EXISTS character_state (
-            character_id TEXT PRIMARY KEY,
-            position_x REAL,
-            position_y REAL,
-            last_activity TEXT
-        );
-        ",
-    )?;
     Ok(conn)
 }
 
