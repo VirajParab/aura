@@ -43,10 +43,13 @@ export class SceneManager {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setClearColor(0x000000, 0);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.9);
-    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+    const ambient = new THREE.AmbientLight(0xffffff, 1.1);
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.55);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.85);
     dir.position.set(2, 5, 5);
-    this.scene.add(ambient, dir);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+    fill.position.set(-3, 2, 4);
+    this.scene.add(ambient, hemi, dir, fill);
   }
 
   setCompanionScale(scale: number) {

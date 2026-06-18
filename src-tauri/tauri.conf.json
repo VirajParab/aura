@@ -39,7 +39,17 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "requireLiteralLeadingDot": false,
+          "allow": [
+            "$HOME/**/*",
+            "$RESOURCE/**/*"
+          ]
+        }
+      }
     }
   },
   "bundle": {

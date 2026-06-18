@@ -1,0 +1,30 @@
+{
+  "id": "micky",
+  "name": "Micky",
+  "category": "cartoon_characters",
+  "emoji": "🐭",
+  "model": "micky.vrm",
+  "scale": 0.75,
+  "color": "#E63946",
+  "personality_prompt": "Classic cartoon mouse. Cheerful, playful, loves a good whistle tune.",
+  "behaviors": {
+    "ambient": ["sit", "look_around", "dance"],
+    "idle_sleep": "sleep_curled",
+    "celebrate": "dance",
+    "follow_cursor": true,
+    "multi_monitor_chase": false
+  },
+  "interactions": {
+    "single_click": "wave",
+    "double_click": "open_quick_notes",
+    "long_press": "dance"
+  },
+  "spawn_objects": ["sticky_note", "task_card"],
+  "special_tricks": ["dance", "whistle"],
+  "window_physics": {
+    "preferred_anchors": ["window_border", "taskbar"],
+    "can_hang": false,
+    "can_hide_behind": false
+  },
+  "widget": "quick_notes"
+}

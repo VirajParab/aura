@@ -227,12 +227,17 @@ export function CharacterOverlay() {
       .then(() => {
         if (!cancelled) {
           sceneRef.current?.setCompanionScale(merged.companion_scale);
-          setShow3dCanvas(sceneRef.current?.hasVrmModel() ?? false);
+          const hasVrm = sceneRef.current?.hasVrmModel() ?? false;
+          setShow3dCanvas(hasVrm);
+          if (!hasVrm) loadedCharacterIdRef.current = null;
         }
       })
       .catch((err) => {
         console.error("Failed to load character renderer:", err);
-        if (!cancelled) setShow3dCanvas(false);
+        if (!cancelled) {
+          setShow3dCanvas(false);
+          loadedCharacterIdRef.current = null;
+        }
       })
       .finally(() => {
         if (!cancelled) setCharacterLoading(false);

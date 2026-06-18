@@ -1,6 +1,6 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { VRMLoaderPlugin, type VRM } from "@pixiv/three-vrm";
+import { VRMLoaderPlugin, VRMUtils, type VRM } from "@pixiv/three-vrm";
 import * as THREE from "three";
 import {
   companionBodyHitCircle,
@@ -63,7 +63,22 @@ export class VrmRenderer implements CharacterRenderer {
       throw new Error("No VRM data in model file");
     }
     this.vrm = vrm;
-    vrm.scene.rotation.y = 0;
+    if (vrm.meta?.metaVersion === "0") {
+      VRMUtils.rotateVRM0(vrm);
+    } else {
+      vrm.scene.rotation.y = 0;
+    }
+
+    vrm.scene.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      for (const material of materials) {
+        if (material instanceof THREE.MeshStandardMaterial) {
+          material.metalness = Math.min(material.metalness, 0.25);
+          material.roughness = Math.max(material.roughness, 0.45);
+        }
+      }
+    });
 
     vrm.scene.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(vrm.scene);

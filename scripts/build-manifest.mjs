@@ -9,7 +9,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
-const launchLineup = ["mochi", "pixel", "sakura", "nova", "ember"];
+const launchLineup = ["mochi", "pixel", "sakura", "nova", "ember", "micky"];
 
 const characters = launchLineup.map((id) => {
   const path = join(root, "characters", id, "definition.json");
