@@ -1,156 +1,233 @@
 # AuraOS
 
-**Your AI Companion + Second Brain + Activity Memory**
+**A desktop companion that *is* your second brain — not another app in your dock.**
 
-> Status: Phase 1 — Character Platform (in development)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)]()
+[![Stack](https://img.shields.io/badge/stack-Tauri%202%20%2B%20React%20%2B%20Three.js-61dafb)]()
 
-AuraOS is a cross-platform desktop app where **VRM characters are the UI** for your second brain. Pick Mochi, Sakura, or Nova — they live on your desktop, react to your activity, and open your notes, clipboard, and memory.
+> **Early & open.** Phase 1 is live — VRM companions on your desktop, local memory, clipboard timeline. We're building in public.
 
-Underneath, Aura will capture your digital life — clipboard, notes, screenshots, trades, decisions — and make it searchable through a unified timeline and AI-powered search. **Phase 1 ships the character layer first**; the memory platform follows in Phase 2.
+---
 
-## Launch Characters
+## Why AuraOS?
 
-| Character | Emoji | Role |
-|-----------|-------|------|
-| **Mochi** | 🐕 | Quick notes, tasks, cursor chase |
-| **Pixel** | 🦝 | Clipboard history, screenshots |
-| **Sakura** | 🌸 | Journal, reminders |
-| **Nova** | 🤖 | AI search, holographic summaries |
-| **Ember** | 🐉 | Vault guard, trading charts |
+You already have Notion for notes, a clipboard manager, a trading journal, and twelve browser tabs of "I'll read this later." None of them talk to each other. Context disappears.
 
-See [Character Roster](docs/product/character-roster.md) for full specs.
+**AuraOS connects the dots** — and puts a character on your desktop who *is* the interface:
 
-## Build Order
+| Old way | Aura way |
+|--------|----------|
+| Open sidebar → Notes | Mochi brings you a sticky note |
+| Search bar → query | Nova projects a holographic search |
+| Clipboard app → history | Pixel collects what you copied |
+| Trading dashboard → stats | Ember guards the vault & charts |
 
-| Phase | Theme | Ships |
-|-------|-------|-------|
-| **1** *(now)* | Character Platform | VRM companions, physics, launch lineup |
-| **2** | Memory & Workspaces | Capture, clipboard, search, timeline, trading |
-| **3** | Intelligence & Integrations | Focus mode, voice, MCP, VSCode |
+Your companion sits on top of your workspace (click-through when you need focus), reacts to what you're doing, and opens the right tool with a **click, double-click, or long-press**.
 
-## Prerequisites
+```
+     📝 Quick Note          ✅ Task
+           \               /
+            \   🐕 Mochi   /     ← long-press → radial action menu
+             \___________/
+                  │
+         [ your desktop — VS Code, terminal, browser... ]
+```
 
-- [Node.js](https://nodejs.org/) 20+
-- [Rust](https://rustup.rs/) stable — `make deps-rust` if `cargo` is missing
-- npm or pnpm
+---
 
-Verify tools: `make doctor`
+## Meet the launch roster
 
-**Linux (Ubuntu/Debian)** — required for Tauri builds:
+Five characters. Five audiences. One engine.
+
+| | Character | Vibe | Your superpower |
+|---|-----------|------|-----------------|
+| 🐕 | **Mochi** | Loyal shiba puppy | Quick notes, tasks, cursor chase |
+| 🦝 | **Pixel** | Curious collector | Clipboard history & screenshots |
+| 🌸 | **Sakura** | Gentle coach | Journal & reminders |
+| 🤖 | **Nova** | Holographic AI | Search & memory summaries |
+| 🐉 | **Ember** | Vault guardian | Trading charts & secrets |
+
+Each character shares the same physics, animation, and interaction engine — but different personalities, spawn objects, and widgets. [Full roster →](docs/product/character-roster.md)
+
+---
+
+## What works today
+
+This isn't a mockup repo. You can run it now.
+
+**Companion layer**
+- Transparent always-on-top overlay (Tauri 2) + system tray
+- VRM characters via Three.js + `@pixiv/three-vrm`
+- 17+ activities — sit, walk, run, sleep, wave, dance, celebrate…
+- Window physics, cursor follow, ambient behaviors
+- Single / double / **long-press** interactions
+- Radial action menu — fast-access notes & tasks in a semi-circle above your companion
+- Spawnable desktop objects (sticky notes, task cards, memory orbs, chart boards…)
+
+**Memory & capture** *(Phase 2 foundation — shipping incrementally)*
+- SQLite local store (`~/.local/share/aura/aura.db`)
+- Passive clipboard monitoring & searchable history
+- Notes, tasks, timeline events, universal capture
+- `Ctrl+Shift+A` capture · `Ctrl+K` command palette
+- Widget panels wired to real local data
+
+**Platform**
+- Linux (X11 + Wayland input regions), macOS, Windows
+- Rust backend — window geometry, system stats, global shortcuts
+
+<!-- Add a demo GIF here when ready: ![AuraOS demo](docs/assets/demo.gif) -->
+
+---
+
+## Quick start
+
+**Requirements:** Node 20+, Rust stable, npm
+
+```bash
+git clone https://github.com/VirajParab/aura.git
+cd aura
+
+make deps-rust    # if cargo isn't installed
+make install      # npm deps
+make models       # CC0 VRM models for all characters
+make doctor       # sanity check
+make dev          # launch the companion overlay
+```
+
+**Linux (Ubuntu/Debian)** — install Tauri system deps first:
 
 ```bash
 make deps-linux
 ```
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for macOS and Windows requirements.
+After launch, find **AuraOS in your system tray** → Settings to pick your character, scale, and movement.
 
-## Quick Start
+| Tray action | What it does |
+|-------------|--------------|
+| **Settings…** | Character picker, opacity, follow cursor |
+| **Show/Hide Companion** | Toggle overlay |
+| **Feed Treat** | Spawn a sticky note |
+| **Quit** | Exit |
 
-```bash
-make deps-rust   # if cargo not found
-make install     # npm dependencies
-make models      # download CC0 VRM models for all characters
-make doctor      # verify node + rust
-make dev         # run Tauri app
-```
+More commands: `make help` · Full dev guide: [DEVELOPMENT.md](DEVELOPMENT.md)
 
-This starts the **companion overlay** on your desktop (always on top). Open **Settings** from the **AuraOS icon in your system tray** (top bar on Linux/macOS, notification area on Windows).
+---
 
-Tray menu:
+## Built for hackers
 
-- **Settings…** — companion picker, appearance, movement
-- **Show/Hide Companion** — toggle the overlay
-- **Feed Treat** — spawn a sticky note on your companion
-- **Quit AuraOS**
-
-Run `make` or `make help` for all commands.
-
-## Makefile Commands
-
-| Command | Description |
-|---------|-------------|
-| `make help` | Show all commands |
-| `make deps-rust` | Install Rust via rustup (if cargo missing) |
-| `make doctor` | Verify node, npm, cargo, rustc |
-| `make install` | Install npm dependencies |
-| `make deps-linux` | Install Linux system packages (sudo) |
-| `make dev` | Run Tauri app |
-| `make dev-ui` | Vite frontend only (no Rust backend) |
-| `make build` | Build frontend (TypeScript + Vite) |
-| `make release` | Build production Tauri binary |
-| `make typecheck` | TypeScript check |
-| `make check` | TypeScript + `cargo check` |
-| `make manifest` | Regenerate `characters/manifest.json` |
-| `make clean` | Remove `dist/` |
-| `make clean-all` | Remove all build artifacts |
-
-Equivalent npm scripts: `npm run tauri:dev`, `npm run build`, `npm run tauri:build`.
-
-## What's Implemented (Phase 1)
-
-- Tauri 2 transparent overlay (always on top) + system tray settings
-- Five launch characters with full definition schema
-- Three.js placeholder renderer (ready for VRM models)
-- Animation state machine (sit, walk, run, celebrate, wave, …)
-- Physics controller (anchor, locomotion, follow-cursor stub)
-- Three-level interactions (single click, double click, long press)
-- Spawnable desktop objects (sticky notes, memory orbs, …)
-- Widget stubs (notes, clipboard, journal, search, vault)
-- SQLite settings persistence (`~/.local/share/aura/aura.db`)
-
-## Project Structure
+If you ever wanted a **Tamagotchi meets Obsidian** on the desktop — this is the codebase.
 
 ```
 aura/
-├── Makefile                 # Dev commands (make help)
-├── characters/              # Character packs + manifest.json
-│   ├── mochi/
-│   ├── pixel/
-│   ├── sakura/
-│   ├── nova/
-│   └── ember/
-├── src/
-│   ├── character/
-│   │   ├── engine/          # Animation, physics, input, spawner
-│   │   ├── renderer/        # Three.js scene
-│   │   ├── components/      # Overlay, widgets, speech bubbles
-│   │   └── store/           # Zustand state
-│   └── settings/            # Character picker UI
-├── src-tauri/
-│   └── src/
-│       ├── character/       # Manifest loader
-│       ├── window/          # Desktop geometry (stub)
-│       ├── system/          # CPU / memory stats
-│       └── db/              # SQLite settings
-└── docs/                    # Product + architecture specs
+├── characters/          # Character packs (JSON + VRM) — add your own
+├── src/character/
+│   ├── engine/          # Physics, animation, input, spawner, platform logic
+│   ├── renderer/        # Three.js + VRM pipeline
+│   └── components/      # Overlay, radial menu, widgets
+├── src-tauri/src/       # Rust — tray, DB, clipboard, overlay input, shortcuts
+└── docs/                # Product vision, physics spec, architecture ADRs
 ```
 
-## Tech Stack
-
-| Layer | Choice |
-|-------|--------|
-| Desktop | Tauri 2 (Rust + React) |
+| Layer | Tech |
+|-------|------|
+| Desktop shell | [Tauri 2](https://tauri.app/) |
+| UI | React 19 + TypeScript + Vite |
 | Characters | Three.js + `@pixiv/three-vrm` |
 | State | Zustand |
-| Database | SQLite (settings; full memory in Phase 2) |
-| Platform | Linux, macOS, Windows |
+| Data | SQLite (rusqlite) |
+| License | [AGPL-3.0](LICENSE) |
 
-See [Tech Stack](docs/architecture/tech-stack.md) and [ADR 0002](docs/adr/0002-use-tauri-for-desktop.md).
+**Good first issues territory:** new character packs, activity poses, widget panels, Linux/Wayland polish, MCP hooks (Phase 3).
+
+---
+
+## Roadmap
+
+We're shipping in three phases. [Full roadmap →](docs/product/roadmap.md)
+
+| Phase | Theme | Status |
+|-------|-------|--------|
+| **1** | Character platform — VRM, physics, interactions | **In progress** |
+| **2** | Memory & workspaces — capture, timeline, trading, dev projects | Foundation landing |
+| **3** | Intelligence — focus mode, voice, MCP, VSCode extension | Planned |
+
+Star the repo if you want Phase 2 memory search and Nova RAG on your desktop.
+
+---
+
+## Open source vs premium
+
+**This repo is the community edition** — free, self-hosted, [AGPLv3](LICENSE).
+
+| Open source (here) | Premium / hosted (separate) |
+|--------------------|----------------------------|
+| Full desktop companion & character engine | Aura Cloud sync & backup |
+| Local SQLite memory & clipboard timeline | Managed AI (no BYOK required) |
+| BYOK LLM integrations | Official marketplace & paid character packs |
+| Community `.aura-char` packs | Broker integrations & enterprise SSO |
+
+Details: [Open-core split](#open-source-vs-premium) below · Commercial licensing: [CLA.md](CLA.md)
+
+<details>
+<summary><strong>Full open-core breakdown</strong></summary>
+
+### Open source (AGPLv3)
+
+Free to use, modify, and self-host. Network deployments must share source under AGPL.
+
+- Character platform — overlay, VRM, physics, interactions, radial menu, launch roster
+- Local memory — SQLite, clipboard, notes, tasks, capture hotkeys, command palette
+- Companion UX — tray, spawn objects, widget panels on local data
+- Developer tools — character schema, build pipeline, community packs
+- Self-hosted AI — bring your own API keys
+
+### Premium & commercial
+
+Contact the copyright holder for a [commercial license](CLA.md).
+
+- Aura Cloud · Hosted intelligence · Marketplace · Trading integrations · Team/enterprise · White-label
+
+</details>
+
+---
+
+## Contributing
+
+We'd love your help — new characters, engine improvements, docs, bug fixes.
+
+1. Read [CONTRIBUTING.md](CONTRIBUTING.md)
+2. Sign the [Contributor License Agreement (CLA.md)](CLA.md) *(by submitting a PR)*
+3. Run `make check` before opening a PR
+
+**Reading order for new contributors:** [Vision](docs/product/vision.md) → [Character Platform](docs/features/character-platform.md) → [DEVELOPMENT.md](DEVELOPMENT.md) → `make dev`
+
+---
 
 ## Documentation
 
-| Doc | Description |
-|-----|-------------|
-| [Product Vision](docs/product/vision.md) | What AuraOS is and why |
-| [Character Platform](docs/features/character-platform.md) | Phase 1 — characters as UI |
-| [Character Roster](docs/product/character-roster.md) | Launch lineup specs |
+| Doc | What's inside |
+|-----|----------------|
+| [Product Vision](docs/product/vision.md) | The problem & the morning-briefing UX |
+| [Character Platform](docs/features/character-platform.md) | Characters as UI — interactions & spawns |
+| [Character Physics](docs/features/character-physics.md) | Walk, fall, anchor, patrol |
+| [Character Roster](docs/product/character-roster.md) | Deep specs for every character |
 | [Roadmap](docs/product/roadmap.md) | Phase 1–3 timeline |
-| [Memory Platform](docs/product/mvp.md) | Phase 2 scope |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Dev guide, deps, next steps |
-| [Full Documentation](docs/README.md) | Complete doc index |
+| [Memory Platform](docs/product/mvp.md) | Phase 2 capture & search |
+| [All docs](docs/README.md) | Complete index |
 
-**Reading order:** Vision → Character Platform → [DEVELOPMENT.md](DEVELOPMENT.md) → run `make dev`.
+---
 
 ## License
 
-TBD
+Copyright (c) 2026 viraj.
+
+AuraOS is **free software** under the [GNU Affero General Public License v3.0](LICENSE) (or later). You may use, modify, and distribute it under those terms. If you run a modified version as a network service, AGPL requires offering source to your users.
+
+Commercial licensing for premium features or proprietary deployment: see [CLA.md](CLA.md).
+
+---
+
+<p align="center">
+  <sub>Built with 🐕 for people who miss the desktop pet era — but need a second brain.</sub>
+</p>
