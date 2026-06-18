@@ -444,6 +444,7 @@ export function CharacterOverlay() {
       {actionMenuOpen && activeCharacter && (
         <CompanionActionMenu
           character={activeCharacter}
+          settings={mergedSettings}
           position={position}
           onSelect={(action) => engineRef.current?.executeMenuAction(action)}
           onClose={() => engineRef.current?.closeActionMenu()}

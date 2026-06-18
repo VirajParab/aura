@@ -364,3 +364,113 @@ export function getCompanionMenuActions(
 
   return actions;
 }
+
+export interface CompanionMenuLayout {
+  /** Two fast-access actions at the top center (notes, tasks, etc.). */
+  primary: CompanionMenuAction[];
+  /** Remaining actions arranged in a semi-circle arc. */
+  arc: CompanionMenuAction[];
+}
+
+const ARC_ACTIVITY_ORDER: CharacterActivity[] = [
+  "sit",
+  "walk",
+  "run",
+  "sleep",
+  "wave",
+  "dance",
+  "jump",
+  "look_around",
+];
+
+function widgetToMenuAction(w: WidgetAction): CompanionMenuAction {
+  const labelLower = w.label.toLowerCase();
+  const emoji = labelLower.includes("task")
+    ? "✅"
+    : labelLower.includes("clipboard") || labelLower.includes("screenshot")
+      ? "📋"
+      : labelLower.includes("journal") || labelLower.includes("reminder")
+        ? "📔"
+        : labelLower.includes("search") || labelLower.includes("memory")
+          ? "🔮"
+          : labelLower.includes("chart") || labelLower.includes("trading")
+            ? "📈"
+            : labelLower.includes("vault")
+              ? "🔐"
+              : "📝";
+
+  return {
+    id: `widget-${w.widget}-${w.variant ?? "default"}`,
+    kind: "widget",
+    widget: w.widget,
+    variant: w.variant,
+    label: w.label,
+    emoji,
+  };
+}
+
+/** Split menu actions into fast-access pair + arc items. */
+export function getCompanionMenuLayout(
+  character: CharacterDefinition,
+): CompanionMenuLayout {
+  const all = getCompanionMenuActions(character);
+  const seen = new Set<string>();
+
+  const primary: CompanionMenuAction[] = [];
+  const widgets = getDoubleClickWidgets(character);
+
+  if (widgets[0]) {
+    primary.push(widgetToMenuAction(widgets[0]));
+    seen.add(primary[0]!.id);
+  }
+  if (widgets[1]) {
+    primary.push(widgetToMenuAction(widgets[1]));
+    seen.add(primary[1]!.id);
+  }
+
+  if (primary.length < 2) {
+    for (const action of all) {
+      if (primary.length >= 2) break;
+      if (action.kind !== "spawn") continue;
+      if (seen.has(action.id)) continue;
+      primary.push(action);
+      seen.add(action.id);
+    }
+  }
+
+  const arc: CompanionMenuAction[] = [];
+
+  for (const action of all) {
+    if (seen.has(action.id)) continue;
+    if (action.kind === "spawn" || action.kind === "widget") {
+      arc.push(action);
+      seen.add(action.id);
+    }
+  }
+
+  for (const activity of ARC_ACTIVITY_ORDER) {
+    const match = all.find(
+      (a) => a.kind === "activity" && a.activity === activity && !seen.has(a.id),
+    );
+    if (match) {
+      arc.push(match);
+      seen.add(match.id);
+    }
+  }
+
+  return { primary: primary.slice(0, 2), arc: arc.slice(0, 8) };
+}
+
+/** Polar position for radial menu (0° = right, 90° = down, 270° = top). */
+export function radialMenuPosition(
+  centerX: number,
+  centerY: number,
+  radius: number,
+  angleDeg: number,
+): { left: number; top: number } {
+  const rad = (angleDeg * Math.PI) / 180;
+  return {
+    left: centerX + radius * Math.cos(rad),
+    top: centerY + radius * Math.sin(rad),
+  };
+}
