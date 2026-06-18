@@ -83,6 +83,9 @@ build: ## Build frontend (TypeScript + Vite)
 release: build check-rust ## Build production Tauri binary
 	PATH="$(CARGO_BIN):$$PATH" $(NPM) run tauri:build
 
+release-upload: ## Upload local Linux bundles to GitHub Releases (needs gh CLI)
+	./scripts/upload-release.sh
+
 # ── Check ────────────────────────────────────────────────────────────────────
 
 typecheck: ## TypeScript check without emit
