@@ -10,11 +10,14 @@ import { computeActivityTransform, type PoseContext } from "@/character/engine/a
 import type { CharacterActivity, CharacterDefinition } from "@/types/character";
 import type { CharacterRenderer } from "./types";
 import { PlaceholderRenderer } from "./PlaceholderRenderer";
+import { createVrmAnimationPlayer, VrmAnimationPlayer } from "./VrmAnimationPlayer";
+import { PROCEDURAL_LOCOMOTION_ACTIVITIES } from "./activityAnimationMap";
 
 export class VrmRenderer implements CharacterRenderer {
   readonly root = new THREE.Group();
   private readonly modelGroup = new THREE.Group();
   private vrm: VRM | null = null;
+  private animPlayer: VrmAnimationPlayer | null = null;
   private activity: CharacterActivity = "sit";
   private activityStartedAt = Date.now();
   private screenX = 0;
@@ -86,6 +89,13 @@ export class VrmRenderer implements CharacterRenderer {
 
     this.modelGroup.add(vrm.scene);
     this.setCompanionScale(this.companionScale);
+
+    try {
+      this.animPlayer = await createVrmAnimationPlayer(vrm, this.definition.id);
+      this.animPlayer.setActivity(this.activity, true);
+    } catch (err) {
+      console.warn(`VRM animations failed for ${this.definition.id}:`, err);
+    }
   }
 
   async load(): Promise<void> {
@@ -96,6 +106,7 @@ export class VrmRenderer implements CharacterRenderer {
     if (activity !== this.activity) {
       this.activity = activity;
       this.activityStartedAt = Date.now();
+      this.animPlayer?.setActivity(activity);
     }
   }
 
@@ -125,29 +136,40 @@ export class VrmRenderer implements CharacterRenderer {
       ...this.poseModifiers,
     });
 
+    const skeletalAnim = this.animPlayer?.hasClips() ?? false;
+    const locomotion = PROCEDURAL_LOCOMOTION_ACTIVITIES.has(this.activity);
+
     const flip = pose.rotationY > Math.PI / 2 ? -1 : 1;
     const pixelScale = vrmBasePixelScale(this.definition.scale, this.companionScale);
 
     this.root.position.set(
       tx + pose.offsetX,
-      ty + pose.offsetY,
+      ty + (skeletalAnim && !locomotion ? 0 : pose.offsetY),
       0,
     );
 
-    this.modelGroup.rotation.z = pose.rotationZ;
+    this.modelGroup.rotation.z = skeletalAnim && !locomotion ? 0 : pose.rotationZ;
     this.modelGroup.rotation.y = Math.PI + pose.rotationY;
-    this.modelGroup.scale.set(
-      pixelScale * pose.scaleX * flip,
-      pixelScale * pose.scaleY,
-      pixelScale,
-    );
+
+    if (skeletalAnim && !locomotion) {
+      this.modelGroup.scale.set(pixelScale * flip, pixelScale, pixelScale);
+    } else {
+      this.modelGroup.scale.set(
+        pixelScale * pose.scaleX * flip,
+        pixelScale * pose.scaleY,
+        pixelScale,
+      );
+    }
 
     if (this.vrm) {
+      this.animPlayer?.update(deltaMs / 1000, performance.now() / 1000);
       this.vrm.update(deltaMs / 1000);
     }
   }
 
   dispose(): void {
+    this.animPlayer?.dispose();
+    this.animPlayer = null;
     if (this.vrm) {
       this.vrm.scene.removeFromParent();
       this.vrm.scene.traverse((child) => {

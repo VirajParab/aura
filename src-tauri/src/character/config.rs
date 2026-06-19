@@ -83,6 +83,43 @@ pub fn bundled_characters_dir(resource_dir: &PathBuf) -> PathBuf {
     }
 }
 
+pub fn shared_animations_dir(resource_dir: &PathBuf) -> PathBuf {
+    resource_dir.join("animations").join("shared")
+}
+
+pub fn get_shared_animation_path(resource_dir: &PathBuf, animation_id: &str) -> Option<PathBuf> {
+    let path = shared_animations_dir(resource_dir).join(format!("{animation_id}.vrma"));
+    path.exists().then_some(path)
+}
+
+pub fn get_character_animation_path(
+    resource_dir: &PathBuf,
+    character_id: &str,
+    animation_id: &str,
+) -> Option<PathBuf> {
+    let path = bundled_characters_dir(resource_dir)
+        .join(character_id)
+        .join("animations")
+        .join(format!("{animation_id}.vrma"));
+    path.exists().then_some(path)
+}
+
+pub fn list_character_animation_ids(resource_dir: &PathBuf, character_id: &str) -> Vec<String> {
+    let dir = bundled_characters_dir(resource_dir)
+        .join(character_id)
+        .join("animations");
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    entries
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            name.strip_suffix(".vrma").map(str::to_string)
+        })
+        .collect()
+}
+
 pub fn load_manifest(resource_dir: &PathBuf) -> Result<CharacterManifest, CharacterError> {
     let path = bundled_characters_dir(resource_dir).join("manifest.json");
     let content = fs::read_to_string(&path)?;

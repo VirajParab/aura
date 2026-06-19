@@ -104,6 +104,9 @@ manifest: ## Regenerate characters/manifest.json from definitions
 models: ## Download CC0 VRM models for launch characters
 	node scripts/download-models.mjs
 
+animations: ## Download shared VRMA animation clips
+	node scripts/download-animations.mjs
+
 # ── Clean ────────────────────────────────────────────────────────────────────
 
 clean: ## Remove frontend build artifacts

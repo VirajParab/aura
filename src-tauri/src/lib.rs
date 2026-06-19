@@ -13,7 +13,9 @@ use std::sync::{Arc, Mutex};
 
 use capture::ClipboardMonitor;
 use character::{
-    bundled_characters_dir, get_character, load_manifest, CharacterDefinition, CharacterManifest,
+    bundled_characters_dir, get_character, get_character_animation_path as character_animation_file,
+    get_shared_animation_path, list_character_animation_ids as list_character_animation_files,
+    load_manifest, CharacterDefinition, CharacterManifest,
 };
 use db::{
     create_capture, create_note, create_task, init_database, list_clipboard, list_events,
@@ -121,6 +123,30 @@ fn get_character_model_path(state: State<'_, AppState>, character_id: String) ->
         .join("model.vrm");
     path.exists()
         .then(|| path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn get_animation_path(state: State<'_, AppState>, animation_id: String) -> Option<String> {
+    get_shared_animation_path(&state.resource_dir, &animation_id)
+        .map(|p| p.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn get_character_animation_path(
+    state: State<'_, AppState>,
+    character_id: String,
+    animation_id: String,
+) -> Option<String> {
+    character_animation_file(&state.resource_dir, &character_id, &animation_id)
+        .map(|p| p.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn list_character_animation_ids(
+    state: State<'_, AppState>,
+    character_id: String,
+) -> Vec<String> {
+    list_character_animation_files(&state.resource_dir, &character_id)
 }
 
 #[tauri::command]
@@ -339,6 +365,9 @@ pub fn run() {
             get_system_stats_cmd,
             get_cursor_position,
             get_character_model_path,
+            get_animation_path,
+            get_character_animation_path,
+            list_character_animation_ids,
             list_clipboard_cmd,
             search_clipboard_cmd,
             list_timeline_cmd,
